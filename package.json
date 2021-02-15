@@ -1,8 +1,11 @@
 {
-  "name": "tauri-stronghold-api",
+  "name": "tauri-stronghold-plugin-api",
   "version": "0.1.0",
-  "author": "Lucas Nogueira <lucas@tauri.studio>",
-  "description": "API wrapper for the Stronghold Tauri plugin",
+  "authors": [
+    "Lucas Nogueira <lucas@tauri.studio>",
+    "Daniel Thompson-Yvetot <denjell@tauri.studio>"
+  ],
+  "description": "API wrapper for the Tauri Plugin for Stronghold ",
   "browser": "dist/index.js",
   "private": "true",
   "scripts": {
