@@ -37,10 +37,8 @@ jobs:
         sudo apt-get install -y webkit2gtk-4.0
     - name: Get current date
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      run: |
-        echo "CURRENT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-        sudo apt-get update
-        sudo apt-get install -y webkit2gtk-4.0
+      run: echo "CURRENT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
     - name: Get current date
       if: matrix.os == 'windows-latest'
       run: echo "CURRENT_DATE=$(Get-Date -Format "yyyy-MM-dd")" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
