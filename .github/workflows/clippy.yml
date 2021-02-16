@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install clippy with stable toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webkit2gtk-4.0
         uses: actions-rs/toolchain@v1
         with:
             profile: minimal
