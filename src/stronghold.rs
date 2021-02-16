@@ -131,7 +131,7 @@ async fn load_actor(
                     .read_snapshot(
                         client_path.clone(),
                         None,
-                        get_password(snapshot_path).await?.to_vec(),
+                        &get_password(snapshot_path).await?.to_vec(),
                         None,
                         Some(snapshot_path.to_path_buf()),
                     )
@@ -505,7 +505,7 @@ async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &PathBuf) -> R
         runtime
             .stronghold
             .write_all_to_snapshot(
-                get_password(snapshot_path).await?.to_vec(),
+                &get_password(snapshot_path).await?.to_vec(),
                 None,
                 Some(snapshot_path.to_path_buf()),
             )
