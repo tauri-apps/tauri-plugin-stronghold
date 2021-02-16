@@ -3,7 +3,7 @@ import { terser } from 'rollup-plugin-terser'
 import typescript from '@rollup/plugin-typescript'
 
 export default {
-	input: './api-src/index.ts',
+	input: './webview-src/index.ts',
 	output: {
 		dir: './dist',
 		entryFileNames: '[name].js',
@@ -14,7 +14,7 @@ export default {
     resolve(),
 	terser(),
 	typescript({
-      tsconfig: './api-src/tsconfig.json'
+      tsconfig: './webview-src/tsconfig.json'
     })
 	]
 }

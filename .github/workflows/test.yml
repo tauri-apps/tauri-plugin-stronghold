@@ -9,7 +9,7 @@ on:
       - main
       - dev
     paths-ignore:
-      - 'api-src/**'
+      - 'webview-src/**'
       - 'dist/**'
       - 'examples/**'
 
