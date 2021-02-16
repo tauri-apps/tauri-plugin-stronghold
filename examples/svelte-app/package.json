@@ -26,6 +26,6 @@
   "dependencies": {
     "sirv-cli": "^1.0.0",
     "tauri": "^0.14.1",
-    "tauri-stronghold-package-api": "link:../../"
+    "tauri-plugin-stronghold-api": "link:../../"
   }
 }

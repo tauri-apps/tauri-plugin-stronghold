@@ -1,5 +1,5 @@
 {
-  "name": "tauri-stronghold-plugin-api",
+  "name": "tauri-plugin-stronghold-api",
   "version": "0.1.0",
   "authors": [
     "Lucas Nogueira <lucas@tauri.studio>",
