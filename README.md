@@ -1,6 +1,8 @@
 # Tauri Plugin Stronghold
-
 This plugin provides a "classical" Tauri Plugin Interface to the [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) encrypted database, secure runtime, and peer-to-peer service.
+
+## Note:
+This plugin is currently written to comply with the pre-beta version of Tauri. It will change when the beta release candidate is published.
 
 ## Architecture
 This repo might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git tags.
