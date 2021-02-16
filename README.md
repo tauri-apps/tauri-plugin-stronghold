@@ -5,6 +5,7 @@ This plugin provides a "classical" Tauri Plugin Interface to the [IOTA Stronghol
 ## Architecture
 This repo might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git tags.
 
+There is one entry point for both Rust and JS components of this plugin: 
 
 
 ## Installation
@@ -39,15 +40,15 @@ fn main() {
 ### WEBVIEW
 `Install`
 ```
-npm install github:tauri-apps/tauri-plugin-stronghold#v0.1.0
+npm install github:tauri-apps/tauri-plugin-stronghold-api#v0.1.0
 # or
-yarn add github:tauri-apps/tauri-plugin-stronghold#v0.1.0
+yarn add github:tauri-apps/tauri-plugin-stronghold-api#v0.1.0
 ```
 
 `package.json`
 ```json
   "dependencies": {
-    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold#v0.1.0",
+    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold-api#v0.1.0",
 ```
 
 Use within your JS/TS:
