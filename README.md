@@ -1,5 +1,5 @@
 # Tauri Plugin Stronghold
-![Test](https://github.com/nothingismagick/tauri-plugin-stronghold/workflows/Test/badge.svg)
+![Test](https://github.com/tauri-apps/tauri-plugin-stronghold/workflows/Test/badge.svg)
 
 This plugin provides a "classical" Tauri Plugin Interface to the [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) encrypted database, secure runtime, and peer-to-peer service.
 
