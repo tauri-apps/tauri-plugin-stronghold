@@ -6,7 +6,7 @@
     "Daniel Thompson-Yvetot <denjell@tauri.studio>"
   ],
   "description": "API wrapper for the Tauri Plugin for Stronghold ",
-  "browser": "dist/index.js",
+  "browser": "webview-dist/index.js",
   "private": "true",
   "scripts": {
     "build": "rollup -c ./webview-src/rollup.config.js",

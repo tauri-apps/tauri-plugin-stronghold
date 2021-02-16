@@ -10,7 +10,7 @@ on:
       - dev
     paths-ignore:
       - 'webview-src/**'
-      - 'dist/**'
+      - 'webview-dist/**'
       - 'examples/**'
 
 jobs:

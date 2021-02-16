@@ -5,7 +5,7 @@ import typescript from '@rollup/plugin-typescript'
 export default {
 	input: './webview-src/index.ts',
 	output: {
-		dir: './dist',
+		dir: './webview-dist',
 		entryFileNames: '[name].js',
 		format: 'es',
 		exports: 'auto'

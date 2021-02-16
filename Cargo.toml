@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Lucas Nogueira <lucas@tauri.studio>"]
 description = "A Tauri plugin for easily interfacing with IOTA Stronghold"
 edition = "2018"
-exclude = ["/examples", "/dist", "/api-definitions", "node_modules"]
+exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 
 [dependencies]
 tauri = "0.11"

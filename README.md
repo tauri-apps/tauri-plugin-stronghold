@@ -4,19 +4,28 @@
 This plugin provides a "classical" Tauri Plugin Interface to the [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) encrypted database, secure runtime, and peer-to-peer service.
 
 ## Note:
-This plugin is currently written to comply with the pre-beta version of Tauri. It will change when the beta release candidate is published.
+This plugin is currently written to comply with the pre-beta version of Tauri. It will change when the beta release candidate is published and is currently instable.
 
 ## Architecture
-This repo might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git tags.
+This repo shape might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git hashes. Of course, it can also be consumed via Cargo and NPM.
 
-There is one entry point for both Rust and JS components of this plugin: 
+### `/src`
+Rust source code that contains the plugin definition and Stronghold features.
 
+### `/webview-src`
+Typescript source for the /dist folder that provides an API to interface with the rust code.
+
+### `/webview-dist`
+Tree-shakeable transpiled JS to be consumed in a WRY webview.
+
+### `/bindings`
+Forthcoming tauri bindings to other programming languages, like DENO.
 
 ## Installation
 There are three general methods of installation that we can recommend.
-1. Pull sources directly from Github using git tags (preferred, most flexible for you, shown below)
+1. Pull sources directly from Github using git tags / revision hashes (most secure, good for developement, shown below)
 2. Git submodule install this repo in your tauri project and then use `file` protocol to ingest the source
-3. Use crates.io and npm (easiest, supply chain risk, requires you to trust that our publishing pipeline worked)
+3. Use crates.io and npm (easiest, and requires you to trust that our publishing pipeline worked)
 
 For more details and usage see [the svelte demo](examples/svelte-app/src/App.svelte). Please note, below in the dependencies you can also lock to a revision/tag in both the `Cargo.toml` and `package.json`
 
