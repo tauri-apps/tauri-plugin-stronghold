@@ -53,15 +53,15 @@ fn main() {
 ### WEBVIEW
 `Install`
 ```
-npm install github:tauri-apps/tauri-plugin-stronghold-api#v0.1.0
+npm install github:tauri-apps/tauri-plugin-stronghold#v0.1.0
 # or
-yarn add github:tauri-apps/tauri-plugin-stronghold-api#v0.1.0
+yarn add github:tauri-apps/tauri-plugin-stronghold#v0.1.0
 ```
 
 `package.json`
 ```json
   "dependencies": {
-    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold-api#v0.1.0",
+    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold#v0.1.0",
 ```
 
 Use within your JS/TS:
