@@ -51,17 +51,24 @@ fn main() {
 ```
 
 ### WEBVIEW
-`Install`
+`Install from a tagged release`
 ```
-npm install github:tauri-apps/tauri-plugin-stronghold#v0.1.0
+npm install github:tauri-apps/tauri-plugin-stronghold#v0.2.0
 # or
-yarn add github:tauri-apps/tauri-plugin-stronghold#v0.1.0
+yarn add github:tauri-apps/tauri-plugin-stronghold#v0.2.0
+```
+
+`Install from a commit`
+```
+npm install github:tauri-apps/tauri-plugin-stronghold#6749525a47a95439c9703d3a49b94ac65660998f
+# or
+yarn add github:tauri-apps/tauri-plugin-stronghold#6749525a47a95439c9703d3a49b94ac65660998f
 ```
 
 `package.json`
 ```json
   "dependencies": {
-    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold#v0.1.0",
+    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold#v0.2.0",
 ```
 
 Use within your JS/TS:
