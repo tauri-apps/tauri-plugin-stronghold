@@ -106,8 +106,8 @@ pub fn stronghold_response_to_result<T>(status: ResultMessage<T>) -> Result<T> {
 async fn load_actor(
     runtime: &mut ActorRuntime,
     snapshot_path: &PathBuf,
-    client_path: &Vec<u8>,
-    flags: &Vec<StrongholdFlags>,
+    client_path: &[u8],
+    flags: &[StrongholdFlags],
 ) -> Result<()> {
     on_stronghold_access(&snapshot_path).await?;
 
@@ -115,7 +115,7 @@ async fn load_actor(
         stronghold_response_to_result(
             runtime
                 .stronghold
-                .switch_actor_target(client_path.clone())
+                .switch_actor_target(client_path.to_vec())
                 .await,
         )?;
     } else {
@@ -123,7 +123,7 @@ async fn load_actor(
             runtime
                 .stronghold
                 .spawn_stronghold_actor(
-                    client_path.clone(),
+                    client_path.to_vec(),
                     flags
                         .iter()
                         .map(|flag| match flag {
@@ -133,7 +133,7 @@ async fn load_actor(
                 )
                 .await,
         )?;
-        runtime.spawned_client_paths.insert(client_path.clone());
+        runtime.spawned_client_paths.insert(client_path.to_vec());
     };
 
     if !runtime.loaded_client_paths.contains(client_path) {
@@ -142,7 +142,7 @@ async fn load_actor(
                 runtime
                     .stronghold
                     .read_snapshot(
-                        client_path.clone(),
+                        client_path.to_vec(),
                         None,
                         &get_password(snapshot_path).await?.0,
                         None,
@@ -151,7 +151,7 @@ async fn load_actor(
                     .await,
             )?;
         }
-        runtime.loaded_client_paths.insert(client_path.clone());
+        runtime.loaded_client_paths.insert(client_path.to_vec());
     }
 
     Ok(())
