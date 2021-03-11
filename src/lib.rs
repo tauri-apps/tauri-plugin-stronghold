@@ -314,7 +314,7 @@ pub struct TauriStronghold;
 fn password_to_key(password: &str) -> [u8; 32] {
     let mut dk = [0; 64];
     // safe to unwrap (rounds > 0)
-    crypto::kdfs::pbkdf::PBKDF2_HMAC_SHA512(password.as_bytes(), b"tauri", 100, &mut dk).unwrap();
+    crypto::keys::pbkdf::PBKDF2_HMAC_SHA512(password.as_bytes(), b"tauri", 100, &mut dk).unwrap();
     let key: [u8; 32] = dk[0..32][..].try_into().unwrap();
     key
 }

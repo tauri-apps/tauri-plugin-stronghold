@@ -107,18 +107,26 @@ async fn load_actor(
     on_stronghold_access(&snapshot_path).await?;
 
     if runtime.spawned_client_paths.contains(client_path) {
-        stronghold_response_to_result(runtime.stronghold.switch_actor_target(client_path.clone()))?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .switch_actor_target(client_path.clone())
+                .await,
+        )?;
     } else {
         stronghold_response_to_result(
-            runtime.stronghold.spawn_stronghold_actor(
-                client_path.clone(),
-                flags
-                    .iter()
-                    .map(|flag| match flag {
-                        StrongholdFlags::IsReadable(flag) => StrongholdFlags::IsReadable(*flag),
-                    })
-                    .collect(),
-            ),
+            runtime
+                .stronghold
+                .spawn_stronghold_actor(
+                    client_path.clone(),
+                    flags
+                        .iter()
+                        .map(|flag| match flag {
+                            StrongholdFlags::IsReadable(flag) => StrongholdFlags::IsReadable(*flag),
+                        })
+                        .collect(),
+                )
+                .await,
         )?;
         runtime.spawned_client_paths.insert(client_path.clone());
     };
