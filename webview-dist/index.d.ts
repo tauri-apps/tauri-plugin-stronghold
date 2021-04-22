@@ -23,7 +23,7 @@ export declare class Location {
     static counter(vaultName: string, counter: number): Location;
 }
 export declare type RecordHint = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
-export declare function setPasswordClearInterval(interval: Duration): any;
+export declare function setPasswordClearInterval(interval: Duration): Promise<unknown>;
 export declare class Store {
     path: string;
     name: string;

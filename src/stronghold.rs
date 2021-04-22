@@ -33,7 +33,7 @@ static PASSWORD_CLEAR_INTERVAL: OnceCell<Arc<Mutex<Duration>>> = OnceCell::new()
 const DEFAULT_PASSWORD_CLEAR_INTERVAL: Duration = Duration::from_millis(0);
 
 struct StatusChangeEventHandler {
-    on_event: Box<dyn FnMut(&PathBuf, &Status) + Send>,
+    on_event: Box<dyn FnMut(&Path, &Status) + Send>,
 }
 
 type StrongholdStatusChangeListeners = Arc<Mutex<Vec<StatusChangeEventHandler>>>;
@@ -90,7 +90,7 @@ fn status_change_listeners() -> &'static StrongholdStatusChangeListeners {
     &LISTENERS
 }
 
-async fn emit_status_change(snapshot_path: &PathBuf, status: &Status) {
+async fn emit_status_change(snapshot_path: &Path, status: &Status) {
     let mut listeners = status_change_listeners().lock().await;
     for listener in listeners.deref_mut() {
         (listener.on_event)(&snapshot_path, &status)
@@ -98,7 +98,7 @@ async fn emit_status_change(snapshot_path: &PathBuf, status: &Status) {
 }
 
 /// Listen to status change events.
-pub async fn on_status_change<F: FnMut(&PathBuf, &Status) + Send + 'static>(cb: F) {
+pub async fn on_status_change<F: FnMut(&Path, &Status) + Send + 'static>(cb: F) {
     let mut l = status_change_listeners().lock().await;
     l.push(StatusChangeEventHandler {
         on_event: Box::new(cb),
@@ -114,7 +114,7 @@ pub fn stronghold_response_to_result<T>(status: ResultMessage<T>) -> Result<T> {
 
 async fn load_actor(
     runtime: &mut ActorRuntime,
-    snapshot_path: &PathBuf,
+    snapshot_path: &Path,
     client_path: &[u8],
     flags: &[StrongholdFlags],
 ) -> Result<()> {
@@ -252,7 +252,7 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
 }
 
 async fn get_password_if_needed(
-    snapshot_path: &PathBuf,
+    snapshot_path: &Path,
     password: Option<Arc<Password>>,
 ) -> Result<Arc<Password>> {
     match password {
@@ -261,7 +261,7 @@ async fn get_password_if_needed(
     }
 }
 
-async fn get_password(snapshot_path: &PathBuf) -> Result<Arc<Password>> {
+async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>> {
     PASSWORD_STORE
         .get_or_init(default_password_store)
         .lock()
@@ -535,7 +535,7 @@ impl Api {
 // if it is, write the current snapshot and load the new one
 async fn check_snapshot(
     mut runtime: &mut ActorRuntime,
-    snapshot_path: &PathBuf,
+    snapshot_path: &Path,
     password: Option<Arc<Password>>,
 ) -> Result<()> {
     let curr_snapshot_path = CURRENT_SNAPSHOT_PATH
@@ -576,14 +576,14 @@ async fn check_snapshot(
             .get_or_init(Default::default)
             .lock()
             .await
-            .replace(snapshot_path.clone());
+            .replace(snapshot_path.to_path_buf());
     }
 
     Ok(())
 }
 
 // saves the snapshot to the file system.
-async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &PathBuf) -> Result<()> {
+async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
     stronghold_response_to_result(
         runtime
             .stronghold
@@ -626,14 +626,14 @@ async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -
     Ok(())
 }
 
-async fn switch_snapshot(mut runtime: &mut ActorRuntime, snapshot_path: &PathBuf) -> Result<()> {
+async fn switch_snapshot(mut runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
     clear_stronghold_cache(&mut runtime, true).await?;
 
     CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
         .lock()
         .await
-        .replace(snapshot_path.clone());
+        .replace(snapshot_path.to_path_buf());
 
     Ok(())
 }

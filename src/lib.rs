@@ -30,10 +30,10 @@ enum StrongholdFlagDto {
     IsReadable(bool),
 }
 
-impl Into<StrongholdFlags> for StrongholdFlagDto {
-    fn into(self) -> StrongholdFlags {
-        match self {
-            Self::IsReadable(flag) => StrongholdFlags::IsReadable(flag),
+impl From<StrongholdFlagDto> for StrongholdFlags {
+    fn from(dto: StrongholdFlagDto) -> StrongholdFlags {
+        match dto {
+            StrongholdFlagDto::IsReadable(flag) => StrongholdFlags::IsReadable(flag),
         }
     }
 }
@@ -42,8 +42,8 @@ impl Into<StrongholdFlags> for StrongholdFlagDto {
 #[serde(tag = "type", content = "payload")]
 enum VaultFlagsDto {}
 
-impl Into<VaultFlags> for VaultFlagsDto {
-    fn into(self) -> VaultFlags {
+impl From<VaultFlagsDto> for VaultFlags {
+    fn from(_dto: VaultFlagsDto) -> VaultFlags {
         unimplemented!()
     }
 }
@@ -66,11 +66,11 @@ enum LocationDto {
     Counter { vault: String, counter: usize },
 }
 
-impl Into<Location> for LocationDto {
-    fn into(self) -> Location {
-        match self {
-            Self::Generic { vault, record } => Location::generic(vault, record),
-            Self::Counter { vault, counter } => Location::counter(vault, counter),
+impl From<LocationDto> for Location {
+    fn from(dto: LocationDto) -> Location {
+        match dto {
+            LocationDto::Generic { vault, record } => Location::generic(vault, record),
+            LocationDto::Counter { vault, counter } => Location::counter(vault, counter),
         }
     }
 }
@@ -82,11 +82,11 @@ enum SLIP10DeriveInputDto {
     Key(LocationDto),
 }
 
-impl Into<SLIP10DeriveInput> for SLIP10DeriveInputDto {
-    fn into(self) -> SLIP10DeriveInput {
-        match self {
-            Self::Seed(location) => SLIP10DeriveInput::Seed(location.into()),
-            Self::Key(location) => SLIP10DeriveInput::Key(location.into()),
+impl From<SLIP10DeriveInputDto> for SLIP10DeriveInput {
+    fn from(dto: SLIP10DeriveInputDto) -> SLIP10DeriveInput {
+        match dto {
+            SLIP10DeriveInputDto::Seed(location) => SLIP10DeriveInput::Seed(location.into()),
+            SLIP10DeriveInputDto::Key(location) => SLIP10DeriveInput::Key(location.into()),
         }
     }
 }
@@ -97,6 +97,7 @@ fn default_record_hint() -> RecordHint {
 
 #[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
+#[allow(clippy::upper_case_acronyms)]
 enum ProcedureDto {
     SLIP10Generate {
         output: LocationDto,
@@ -139,10 +140,10 @@ enum ProcedureDto {
     },
 }
 
-impl Into<Procedure> for ProcedureDto {
-    fn into(self) -> Procedure {
-        match self {
-            Self::SLIP10Generate {
+impl From<ProcedureDto> for Procedure {
+    fn from(dto: ProcedureDto) -> Procedure {
+        match dto {
+            ProcedureDto::SLIP10Generate {
                 output,
                 hint,
                 size_bytes,
@@ -151,7 +152,7 @@ impl Into<Procedure> for ProcedureDto {
                 hint,
                 size_bytes,
             },
-            Self::SLIP10Derive {
+            ProcedureDto::SLIP10Derive {
                 chain,
                 input,
                 output,
@@ -162,7 +163,7 @@ impl Into<Procedure> for ProcedureDto {
                 output: output.into(),
                 hint,
             },
-            Self::BIP39Recover {
+            ProcedureDto::BIP39Recover {
                 mnemonic,
                 passphrase,
                 output,
@@ -173,7 +174,7 @@ impl Into<Procedure> for ProcedureDto {
                 output: output.into(),
                 hint,
             },
-            Self::BIP39Generate {
+            ProcedureDto::BIP39Generate {
                 passphrase,
                 output,
                 hint,
@@ -182,13 +183,13 @@ impl Into<Procedure> for ProcedureDto {
                 output: output.into(),
                 hint,
             },
-            Self::BIP39MnemonicSentence { seed } => {
+            ProcedureDto::BIP39MnemonicSentence { seed } => {
                 Procedure::BIP39MnemonicSentence { seed: seed.into() }
             }
-            Self::Ed25519PublicKey { private_key } => Procedure::Ed25519PublicKey {
+            ProcedureDto::Ed25519PublicKey { private_key } => Procedure::Ed25519PublicKey {
                 private_key: private_key.into(),
             },
-            Self::Ed25519Sign { private_key, msg } => Procedure::Ed25519Sign {
+            ProcedureDto::Ed25519Sign { private_key, msg } => Procedure::Ed25519Sign {
                 private_key: private_key.into(),
                 msg: msg.as_bytes().to_vec(),
             },
@@ -418,7 +419,7 @@ fn password_to_key(password: &str) -> Vec<u8> {
 #[derive(Serialize)]
 struct StatusChangeEvent<'a> {
     #[serde(rename = "snapshotPath")]
-    snapshot_path: &'a PathBuf,
+    snapshot_path: PathBuf,
     status: &'a stronghold::Status,
 }
 
@@ -435,7 +436,7 @@ impl<M: Params> Plugin<M> for TauriStronghold<M> {
                         panic!("Stronghold status change event not parsed by your Event struct")
                     }),
                     Some(StatusChangeEvent {
-                        snapshot_path,
+                        snapshot_path: snapshot_path.to_path_buf(),
                         status,
                     }),
                 );

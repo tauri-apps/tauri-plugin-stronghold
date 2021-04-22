@@ -1,8 +1,5 @@
-// import { invoke } from '@tauri-apps/api/dist/tauri'
-// import { listen } from '@tauri-apps/api/dist/event'
-
-// @ts-ignore
-const invoke = window.__TAURI__.invoke
+import { invoke } from '@tauri-apps/api/tauri'
+import { listen } from '@tauri-apps/api/event'
 
 export interface Duration {
   millis: number
@@ -25,12 +22,12 @@ type Unregister = () => void
 
 const statusChangeListeners: { [snapshotPath: string]: StatusListener[] } = {}
 
-/*listen('stronghold://status-change', event => {
+listen('stronghold://status-change', event => {
   const { snapshotPath, status } = event.payload as any
   for (const listener of (statusChangeListeners[snapshotPath] || [])) {
     listener.cb(status)
   }
-})*/
+})
 
 function s4() {
   return Math.floor((1 + Math.random()) * 0x10000)
