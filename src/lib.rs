@@ -1,8 +1,7 @@
-use iota_stronghold::{
-    Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags,
-    VaultFlags,
-};
 use crypto::keys::slip10::Chain;
+use iota_stronghold::{
+    Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags, VaultFlags,
+};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tauri::{async_runtime::Mutex, plugin::Plugin, InvokeMessage, Params, Window};
@@ -63,14 +62,8 @@ struct VaultDto {
 #[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum LocationDto {
-    Generic {
-        vault: String,
-        record: String,
-    },
-    Counter {
-        vault: String,
-        counter: usize,
-    },
+    Generic { vault: String, record: String },
+    Counter { vault: String, counter: usize },
 }
 
 impl Into<Location> for LocationDto {
