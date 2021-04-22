@@ -8,7 +8,7 @@ use iota_stronghold::{
 };
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
-use serde::Serialize;
+use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
 use std::{
@@ -48,6 +48,15 @@ pub enum Error {
     FailedToPerformAction(String),
     #[error("snapshot password not set")]
     PasswordNotSet,
+}
+
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

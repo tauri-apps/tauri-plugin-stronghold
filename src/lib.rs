@@ -1,21 +1,24 @@
-use async_std::task::block_on;
 use iota_stronghold::{
-    hd::Chain, Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags,
+    Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags,
     VaultFlags,
 };
+use crypto::keys::slip10::Chain;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use tauri::{async_runtime::Mutex, plugin::Plugin, InvokeMessage, Params, Window};
 
 use std::{
     collections::HashMap,
     convert::{Into, TryInto},
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::Duration,
 };
 
 mod stronghold;
-use stronghold::Api;
+use stronghold::{Api, Status};
+
+type Result<T> = std::result::Result<T, stronghold::Error>;
 
 fn api_instances() -> &'static Arc<Mutex<HashMap<PathBuf, Api>>> {
     static API: Lazy<Arc<Mutex<HashMap<PathBuf, Api>>>> = Lazy::new(Default::default);
@@ -66,7 +69,7 @@ enum LocationDto {
     },
     Counter {
         vault: String,
-        counter: Option<usize>,
+        counter: usize,
     },
 }
 
@@ -219,97 +222,197 @@ pub enum ProcResultDto {
     Ed25519Sign(String),
 }
 
-#[derive(Deserialize)]
-#[serde(tag = "cmd")]
-enum StrongholdCmd {
-    StrongholdInit {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        password: String,
-        callback: String,
-        error: String,
-    },
-    StrongholdDestroy {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        callback: String,
-        error: String,
-    },
-    StrongholdSetPasswordClearInterval {
-        interval: Duration,
-    },
-    StrongholdSnapshotSave {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        callback: String,
-        error: String,
-    },
-    StrongholdGetStatus {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        callback: String,
-        error: String,
-    },
-    GetStrongholdStoreRecord {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        location: LocationDto,
-        callback: String,
-        error: String,
-    },
-    SaveStrongholdRecord {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        location: LocationDto,
-        record: String,
-        #[serde(rename = "recordHint", default = "default_record_hint")]
-        record_hint: RecordHint,
-        #[serde(default)]
-        flags: Vec<VaultFlagsDto>,
-        callback: String,
-        error: String,
-    },
-    RemoveStrongholdRecord {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        location: LocationDto,
-        #[serde(default)]
-        gc: bool,
-        callback: String,
-        error: String,
-    },
-    SaveStrongholdStoreRecord {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        location: LocationDto,
-        record: String,
-        lifetime: Option<Duration>,
-        callback: String,
-        error: String,
-    },
-    RemoveStrongholdStoreRecord {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        location: LocationDto,
-        callback: String,
-        error: String,
-    },
-    ExecuteStrongholdProcedure {
-        #[serde(rename = "snapshotPath")]
-        snapshot_path: PathBuf,
-        vault: VaultDto,
-        procedure: ProcedureDto,
-        callback: String,
-        error: String,
-    },
+#[tauri::command]
+async fn init(snapshot_path: PathBuf, password: String) -> Result<()> {
+    let api = Api::new(snapshot_path.clone());
+    api_instances()
+        .lock()
+        .await
+        .insert(snapshot_path.clone(), api);
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.load(password_to_key(&password)).await?;
+    Ok(())
 }
 
-pub struct TauriStronghold;
+#[tauri::command]
+async fn set_password_clear_interval(interval: Duration) {
+    stronghold::set_password_clear_interval(interval).await;
+}
+
+#[tauri::command]
+async fn destroy(snapshot_path: PathBuf) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.unload(true).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_snapshot(snapshot_path: PathBuf) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.save().await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_status(snapshot_path: PathBuf) -> Result<Status> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let status = api.get_status().await;
+    Ok(status)
+}
+
+#[tauri::command]
+async fn get_store_record(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    location: LocationDto,
+) -> Result<String> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let store = api.get_store(vault.name, array_into(vault.flags));
+    let record = store.get_record(location.into()).await?;
+    Ok(record)
+}
+
+#[tauri::command]
+async fn save_record(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    location: LocationDto,
+    record: String,
+    record_hint: Option<RecordHint>,
+    flags: Option<Vec<VaultFlagsDto>>,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    vault
+        .save_record(
+            location.into(),
+            record,
+            record_hint.unwrap_or_else(default_record_hint),
+            array_into(flags.unwrap_or_default()),
+        )
+        .await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn remove_record(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    location: LocationDto,
+    gc: bool,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    vault.remove_record(location.into(), gc).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_store_record(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    location: LocationDto,
+    record: String,
+    lifetime: Option<Duration>,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let store = api.get_store(vault.name, array_into(vault.flags));
+    store.save_record(location.into(), record, lifetime).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn remove_store_record(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    location: LocationDto,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let store = api.get_store(vault.name, array_into(vault.flags));
+    store.remove_record(location.into()).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn execute_procedure(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    procedure: ProcedureDto,
+) -> Result<ProcResultDto> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    let result = vault.execute_procedure(procedure.into()).await?;
+
+    let result = match result {
+        ProcResult::SLIP10Generate(status) => {
+            stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::SLIP10Generate
+        }
+        ProcResult::SLIP10Derive(status) => {
+            let chain_code = stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::SLIP10Derive(hex::encode(chain_code))
+        }
+        ProcResult::BIP39Recover(status) => {
+            stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::BIP39Recover
+        }
+        ProcResult::BIP39Generate(status) => {
+            stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::BIP39Generate
+        }
+        ProcResult::BIP39MnemonicSentence(status) => {
+            let sentence = stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::BIP39MnemonicSentence(sentence)
+        }
+        ProcResult::Ed25519PublicKey(status) => {
+            let public_key = stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::Ed25519PublicKey(hex::encode(public_key))
+        }
+        ProcResult::Ed25519Sign(status) => {
+            let signature = stronghold::stronghold_response_to_result(status)?;
+            ProcResultDto::Ed25519Sign(hex::encode(signature))
+        }
+        ProcResult::Error(e) => {
+            return Err(stronghold::Error::FailedToPerformAction(e));
+        }
+    };
+
+    Ok(result)
+}
+
+pub struct TauriStronghold<M: Params> {
+    invoke_handler: Box<dyn Fn(InvokeMessage<M>) + Send + Sync>,
+}
+
+impl<M: Params> Default for TauriStronghold<M> {
+    fn default() -> Self {
+        Self {
+            invoke_handler: Box::new(tauri::generate_handler![
+                init,
+                set_password_clear_interval,
+                destroy,
+                save_snapshot,
+                get_status,
+                get_store_record,
+                save_record,
+                remove_record,
+                save_store_record,
+                remove_store_record,
+                execute_procedure
+            ]),
+        }
+    }
+}
 
 fn password_to_key(password: &str) -> Vec<u8> {
     let mut dk = [0; 64];
@@ -326,14 +429,18 @@ struct StatusChangeEvent<'a> {
     status: &'a stronghold::Status,
 }
 
-impl tauri::plugin::Plugin for TauriStronghold {
-    fn ready(&self, webview: &mut tauri::Webview<'_>) {
-        let mut webview_ = webview.as_mut();
-        block_on(stronghold::on_status_change(
+impl<M: Params> Plugin<M> for TauriStronghold<M> {
+    fn name(&self) -> &'static str {
+        "stronghold"
+    }
+
+    fn created(&mut self, window: Window<M>) {
+        tauri::async_runtime::block_on(stronghold::on_status_change(
             move |snapshot_path, status| {
-                let _ = tauri::event::emit(
-                    &mut webview_,
-                    "stronghold:status-change",
+                let _ = window.emit(
+                    &"stronghold://status-change".parse().unwrap_or_else(|_| {
+                        panic!("Stronghold status change event not parsed by your Event struct")
+                    }),
                     Some(StatusChangeEvent {
                         snapshot_path,
                         status,
@@ -343,258 +450,7 @@ impl tauri::plugin::Plugin for TauriStronghold {
         ))
     }
 
-    fn extend_api(&self, webview: &mut tauri::Webview<'_>, payload: &str) -> Result<bool, String> {
-        use StrongholdCmd::*;
-        match serde_json::from_str(payload) {
-            Err(e) => Err(e.to_string()),
-            Ok(command) => {
-                match command {
-                    StrongholdInit {
-                        snapshot_path,
-                        password,
-                        callback,
-                        error,
-                    } => {
-                        let api = Api::new(snapshot_path.clone());
-                        let mut api_instances_ = api_instances().lock().unwrap();
-                        api_instances_.insert(snapshot_path.clone(), api);
-                        drop(api_instances_);
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                block_on(api.load(password_to_key(&password)))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    StrongholdDestroy {
-                        snapshot_path,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                block_on(api.unload(true))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    StrongholdSetPasswordClearInterval { interval } => {
-                        block_on(stronghold::set_password_clear_interval(interval));
-                    }
-                    StrongholdSnapshotSave {
-                        snapshot_path,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                block_on(api.save())?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    StrongholdGetStatus {
-                        snapshot_path,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let status = block_on(api.get_status());
-                                Ok(status)
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    GetStrongholdStoreRecord {
-                        snapshot_path,
-                        vault,
-                        location,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let store = api.get_store(vault.name, array_into(vault.flags));
-                                let record = block_on(store.get_record(location.into()))?;
-                                Ok(record)
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    SaveStrongholdRecord {
-                        snapshot_path,
-                        vault,
-                        location,
-                        record,
-                        record_hint,
-                        flags,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let vault = api.get_vault(vault.name, array_into(vault.flags));
-                                block_on(vault.save_record(
-                                    location.into(),
-                                    record,
-                                    record_hint,
-                                    array_into(flags),
-                                ))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    RemoveStrongholdRecord {
-                        snapshot_path,
-                        vault,
-                        location,
-                        gc,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let vault = api.get_vault(vault.name, array_into(vault.flags));
-                                block_on(vault.remove_record(location.into(), gc))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    SaveStrongholdStoreRecord {
-                        snapshot_path,
-                        vault,
-                        location,
-                        record,
-                        lifetime,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let store = api.get_store(vault.name, array_into(vault.flags));
-                                block_on(store.save_record(location.into(), record, lifetime))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    RemoveStrongholdStoreRecord {
-                        snapshot_path,
-                        vault,
-                        location,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let store = api.get_store(vault.name, array_into(vault.flags));
-                                block_on(store.remove_record(location.into()))?;
-                                Ok(())
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                    ExecuteStrongholdProcedure {
-                        snapshot_path,
-                        vault,
-                        procedure,
-                        callback,
-                        error,
-                    } => {
-                        tauri::execute_promise(
-                            webview,
-                            move || {
-                                let api_instances = api_instances().lock().unwrap();
-                                let api = api_instances.get(&snapshot_path).unwrap();
-                                let vault = api.get_vault(vault.name, array_into(vault.flags));
-                                let result = block_on(vault.execute_procedure(procedure.into()))?;
-
-                                let result = match result {
-                                    ProcResult::SLIP10Generate(status) => {
-                                        stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::SLIP10Generate
-                                    }
-                                    ProcResult::SLIP10Derive(status) => {
-                                        let chain_code =
-                                            stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::SLIP10Derive(hex::encode(chain_code))
-                                    }
-                                    ProcResult::BIP39Recover(status) => {
-                                        stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::BIP39Recover
-                                    }
-                                    ProcResult::BIP39Generate(status) => {
-                                        stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::BIP39Generate
-                                    }
-                                    ProcResult::BIP39MnemonicSentence(status) => {
-                                        let sentence =
-                                            stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::BIP39MnemonicSentence(sentence)
-                                    }
-                                    ProcResult::Ed25519PublicKey(status) => {
-                                        let public_key =
-                                            stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::Ed25519PublicKey(hex::encode(public_key))
-                                    }
-                                    ProcResult::Ed25519Sign(status) => {
-                                        let signature =
-                                            stronghold::stronghold_response_to_result(status)?;
-                                        ProcResultDto::Ed25519Sign(hex::encode(signature))
-                                    }
-                                };
-
-                                Ok(result)
-                            },
-                            callback,
-                            error,
-                        );
-                    }
-                }
-                Ok(true)
-            }
-        }
+    fn extend_api(&mut self, message: InvokeMessage<M>) {
+        (self.invoke_handler)(message)
     }
 }

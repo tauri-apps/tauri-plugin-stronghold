@@ -3,11 +3,11 @@
     windows_subsystem = "windows"
 )]
 
-use tauri_stronghold::TauriStronghold;
+use tauri_plugin_stronghold::TauriStronghold;
 
 fn main() {
-    tauri::AppBuilder::new()
-        .plugin(TauriStronghold {})
-        .build()
-        .run();
+    tauri::Builder::default()
+        .plugin(TauriStronghold::default())
+        .run(tauri::generate_context!())
+        .expect("failed to run app");
 }
