@@ -77,6 +77,7 @@ impl From<LocationDto> for Location {
 
 #[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
+#[allow(clippy::upper_case_acronyms)]
 enum SLIP10DeriveInputDto {
     Seed(LocationDto),
     Key(LocationDto),
@@ -199,6 +200,7 @@ impl From<ProcedureDto> for Procedure {
 
 #[derive(Serialize)]
 #[serde(untagged)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ProcResultDto {
     /// Return from generating a `SLIP10` seed.
     SLIP10Generate,
