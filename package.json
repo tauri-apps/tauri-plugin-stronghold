@@ -22,7 +22,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "tauri": "^0.14.1",
+    "@tauri-apps/api": "^1.0.0-beta-rc.2",
     "tslib": "^2.1.0"
   }
 }

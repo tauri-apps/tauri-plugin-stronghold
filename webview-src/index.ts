@@ -1,5 +1,5 @@
-import { invoke, promisified } from 'tauri/api/tauri'
-import { listen } from 'tauri/api/event'
+import { invoke } from '@tauri-apps/api/tauri'
+import { listen } from '@tauri-apps/api/event'
 
 export interface Duration {
   millis: number
@@ -22,7 +22,7 @@ type Unregister = () => void
 
 const statusChangeListeners: { [snapshotPath: string]: StatusListener[] } = {}
 
-listen('stronghold:status-change', event => {
+listen('stronghold://status-change', event => {
   const { snapshotPath, status } = event.payload as any
   for (const listener of (statusChangeListeners[snapshotPath] || [])) {
     listener.cb(status)
@@ -57,7 +57,7 @@ export class Location {
     })
   }
 
-  static counter(vaultName: string, counter?: number) {
+  static counter(vaultName: string, counter: number) {
     return new Location('Counter', {
       vault: vaultName,
       counter
@@ -69,8 +69,7 @@ export class Location {
 export type RecordHint = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]
 
 export function setPasswordClearInterval(interval: Duration) {
-  return invoke({
-    cmd: 'StrongholdSetPasswordClearInterval',
+  return invoke('plugin:stronghold|set_password_clear_interval', {
     interval
   })
 }
@@ -94,8 +93,7 @@ export class Store {
   }
 
   get(location: Location): Promise<string> {
-    return promisified({
-      cmd: 'GetStrongholdStoreRecord',
+    return invoke('plugin:stronghold|get_store_record', {
       snapshotPath: this.path,
       vault: this.vault,
       location
@@ -103,8 +101,7 @@ export class Store {
   }
 
   insert(location: Location, record: string, lifetime?: Duration): Promise<void> {
-    return promisified({
-      cmd: 'SaveStrongholdStoreRecord',
+    return invoke('plugin:stronghold|save_store_record', {
       snapshotPath: this.path,
       vault: this.vault,
       location,
@@ -114,8 +111,7 @@ export class Store {
   }
 
   remove(location: Location): Promise<void> {
-    return promisified({
-      cmd: 'RemoveStrongholdStoreRecord',
+    return invoke('plugin:stronghold|remove_store_record', {
       snapshotPath: this.path,
       vault: this.vault,
       location
@@ -142,8 +138,7 @@ export class Vault {
   }
 
   insert(location: Location, record: string, recordHint?: RecordHint): Promise<void> {
-    return promisified({
-      cmd: 'SaveStrongholdRecord',
+    return invoke('plugin:stronghold|save_record', {
       snapshotPath: this.path,
       vault: this.vault,
       location,
@@ -154,8 +149,7 @@ export class Vault {
   }
 
   remove(location: Location, gc = true): Promise<void> {
-    return promisified({
-      cmd: 'RemoveStrongholdRecord',
+    return invoke('plugin:stronghold|remove_record', {
       snapshotPath: this.path,
       vault: this.vault,
       location,
@@ -164,8 +158,7 @@ export class Vault {
   }
 
   generateSLIP10Seed(outputLocation: Location, sizeBytes?: number, hint?: RecordHint): Promise<void> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -180,8 +173,7 @@ export class Vault {
   }
 
   deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location, hint?: RecordHint): Promise<string> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -200,8 +192,7 @@ export class Vault {
   }
 
   recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -217,8 +208,7 @@ export class Vault {
   }
 
   generateBIP39(outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -233,8 +223,7 @@ export class Vault {
   }
 
   getPublicKey(privateKeyLocation: Location): Promise<string> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -247,8 +236,7 @@ export class Vault {
   }
 
   sign(privateKeyLocation: Location, msg: string): Promise<string> {
-    return promisified({
-      cmd: 'ExecuteStrongholdProcedure',
+    return invoke('plugin:stronghold|execute_procedure', {
       snapshotPath: this.path,
       vault: this.vault,
       procedure: {
@@ -271,16 +259,14 @@ export class Stronghold {
   }
 
   reload(password: string): Promise<void> {
-    return promisified({
-      cmd: 'StrongholdInit',
+    return invoke('plugin:stronghold|init', {
       snapshotPath: this.path,
       password
     })
   }
 
   unload(): Promise<void> {
-    return promisified({
-      cmd: 'StrongholdDestroy',
+    return invoke('plugin:stronghold|destroy', {
       snapshotPath: this.path
     })
   }
@@ -294,15 +280,13 @@ export class Stronghold {
   }
 
   save(): Promise<void> {
-    return promisified({
-      cmd: 'StrongholdSnapshotSave',
+    return invoke('plugin:stronghold|save_snapshot', {
       snapshotPath: this.path
     })
   }
 
   getStatus(): Promise<Status> {
-    return promisified({
-      cmd: 'StrongholdGetStatus',
+    return invoke('plugin:stronghold|get_status', {
       snapshotPath: this.path
     })
   }
