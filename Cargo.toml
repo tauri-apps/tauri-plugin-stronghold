@@ -7,7 +7,7 @@ edition = "2018"
 exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 
 [dependencies]
-tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
+tauri = "1.0.0-beta-rc.4"
 thiserror = "1.0"
 iota_stronghold = "0.4.1"
 iota-crypto = { version = "0.5.0", features = ["hmac", "sha", "pbkdf", "slip10"] }
