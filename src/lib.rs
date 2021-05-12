@@ -4,7 +4,7 @@ use iota_stronghold::{
 };
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tauri::{async_runtime::Mutex, plugin::Plugin, InvokeMessage, Params, Window};
+use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Params, Window};
 
 use std::{
     collections::HashMap,
@@ -14,7 +14,8 @@ use std::{
     time::Duration,
 };
 
-mod stronghold;
+/// The stronghold interface.
+pub mod stronghold;
 use stronghold::{Api, Status};
 
 type Result<T> = std::result::Result<T, stronghold::Error>;
@@ -386,11 +387,11 @@ async fn execute_procedure(
     Ok(result)
 }
 
-pub struct TauriStronghold<M: Params> {
-    invoke_handler: Box<dyn Fn(InvokeMessage<M>) + Send + Sync>,
+pub struct TauriStronghold<P: Params> {
+    invoke_handler: Box<dyn Fn(Invoke<P>) + Send + Sync>,
 }
 
-impl<M: Params> Default for TauriStronghold<M> {
+impl<P: Params> Default for TauriStronghold<P> {
     fn default() -> Self {
         Self {
             invoke_handler: Box::new(tauri::generate_handler![
@@ -425,12 +426,12 @@ struct StatusChangeEvent<'a> {
     status: &'a stronghold::Status,
 }
 
-impl<M: Params> Plugin<M> for TauriStronghold<M> {
+impl<P: Params> Plugin<P> for TauriStronghold<P> {
     fn name(&self) -> &'static str {
         "stronghold"
     }
 
-    fn created(&mut self, window: Window<M>) {
+    fn created(&mut self, window: Window<P>) {
         tauri::async_runtime::block_on(stronghold::on_status_change(
             move |snapshot_path, status| {
                 let _ = window.emit(
@@ -446,7 +447,7 @@ impl<M: Params> Plugin<M> for TauriStronghold<M> {
         ))
     }
 
-    fn extend_api(&mut self, message: InvokeMessage<M>) {
-        (self.invoke_handler)(message)
+    fn extend_api(&mut self, invoke: Invoke<P>) {
+        (self.invoke_handler)(invoke)
     }
 }
