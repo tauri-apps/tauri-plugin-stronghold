@@ -1,5 +1,5 @@
 use crypto::keys::slip10::Chain;
-use iota_stronghold::{
+pub use iota_stronghold::{
     Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags, VaultFlags,
 };
 use once_cell::sync::Lazy;
