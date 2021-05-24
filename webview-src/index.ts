@@ -13,6 +13,35 @@ export interface Status {
   }
 }
 
+export interface SwarmInfo {
+  peerId: string
+  listeningAddresses: string[]
+}
+
+export enum RelayDirection {
+  Dialing,
+  Listening,
+  Both
+}
+
+export enum RequestPermission {
+  CheckVault,
+  CheckRecord,
+  WriteToStore,
+  ReadFromStore,
+  DeleteFromStore,
+  CreateNewVault,
+  WriteToVault,
+  RevokeData,
+  GarbageCollect,
+  ListIds,
+  ReadSnapshot,
+  WriteSnapshot,
+  FillSnapshot,
+  ClearCache,
+  ControlRequest,
+}
+
 interface StatusListener {
   id: string
   cb: (status: Status) => void
@@ -74,6 +103,143 @@ export function setPasswordClearInterval(interval: Duration) {
   })
 }
 
+class ProcedureExecutor {
+  procedureArgs: { [k: string]: any }
+  command: string
+
+  constructor(isRemote: boolean, procedureArgs: { [k: string]: any }) {
+    this.procedureArgs = procedureArgs
+    this.command = isRemote ? 'execute_remote_procedure' : 'execute_procedure'
+  }
+
+  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number, hint?: RecordHint): Promise<void> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'SLIP10Generate',
+        payload: {
+          output: outputLocation,
+          sizeBytes,
+          hint
+        }
+      }
+    })
+  }
+
+  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location, hint?: RecordHint): Promise<string> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'SLIP10Derive',
+        payload: {
+          chain,
+          input: {
+            type: source,
+            payload: sourceLocation
+          },
+          output: outputLocation,
+          hint
+        }
+      }
+    })
+  }
+
+  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'BIP39Recover',
+        payload: {
+          mnemonic,
+          passphrase,
+          output: outputLocation,
+          hint
+        }
+      }
+    })
+  }
+
+  generateBIP39(outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'BIP39Generate',
+        payload: {
+          output: outputLocation,
+          passphrase,
+          hint
+        }
+      }
+    })
+  }
+
+  getPublicKey(privateKeyLocation: Location): Promise<string> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'Ed25519PublicKey',
+        payload: {
+          privateKey: privateKeyLocation
+        }
+      }
+    })
+  }
+
+  sign(privateKeyLocation: Location, msg: string): Promise<string> {
+    return invoke(`plugin:stronghold|${this.command}`, {
+      ...this.procedureArgs,
+      procedure: {
+        type: 'Ed25519Sign',
+        payload: {
+          privateKey: privateKeyLocation,
+          msg
+        }
+      }
+    })
+  }
+}
+
+export class RemoteStore {
+  path: string
+  peerId: string
+
+  constructor(path: string, peerId: string) {
+    this.path = path
+    this.peerId = peerId
+  }
+
+  get(location: Location): Promise<string> {
+    return invoke('plugin:stronghold|get_remote_store_record', {
+      snapshotPath: this.path,
+      peerId: this.peerId,
+      location
+    })
+  }
+
+  insert(location: Location, record: string, lifetime?: Duration): Promise<void> {
+    return invoke('plugin:stronghold|save_remote_store_record', {
+      snapshotPath: this.path,
+      peerId: this.peerId,
+      location,
+      record,
+      lifetime
+    })
+  }
+}
+
+export class RemoteVault extends ProcedureExecutor {
+  path: string
+  peerId: string
+
+  constructor(path: string, peerId: string) {
+    super(true, {
+      peerId
+    })
+    this.path = path
+    this.peerId = peerId
+  }
+}
+
 export class Store {
   path: string
   name: string
@@ -119,12 +285,19 @@ export class Store {
   }
 }
 
-export class Vault {
+export class Vault extends ProcedureExecutor {
   path: string
   name: string
   flags: StrongholdFlag[]
 
   constructor(path: string, name: string, flags: StrongholdFlag[]) {
+    super(false, {
+      snapshotPath: path,
+      vault: {
+        name,
+        flags
+      }
+    })
     this.path = path
     this.name = name
     this.flags = flags
@@ -156,97 +329,103 @@ export class Vault {
       gc
     })
   }
+}
 
-  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number, hint?: RecordHint): Promise<void> {
-    return invoke('plugin:stronghold|execute_procedure', {
-      snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'SLIP10Generate',
-        payload: {
-          output: outputLocation,
-          sizeBytes,
-          hint
-        }
-      }
+export class Communication {
+  path: string
+
+  constructor(path: string) {
+    this.path = path
+  }
+
+  stop(): Promise<void> {
+    return invoke('plugin:stronghold|stop_communication', {
+      snapshotPath: this.path
     })
   }
 
-  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location, hint?: RecordHint): Promise<string> {
-    return invoke('plugin:stronghold|execute_procedure', {
+  startListening(addr?: string): Promise<string> {
+    return invoke('plugin:stronghold|start_listening', {
       snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'SLIP10Derive',
-        payload: {
-          chain,
-          input: {
-            type: source,
-            payload: sourceLocation
-          },
-          output: outputLocation,
-          hint
-        }
-      }
+      addr
     })
   }
 
-  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return invoke('plugin:stronghold|execute_procedure', {
+  getSwarmInfo(): Promise<SwarmInfo> {
+    return invoke('plugin:stronghold|get_swarm_info', { snapshotPath: this.path })
+  }
+
+  addPeer(peerId: string, addr?: string, relayDirection?: RelayDirection): Promise<string> {
+    return invoke('plugin:stronghold|add_peer', {
       snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'BIP39Recover',
-        payload: {
-          mnemonic,
-          passphrase,
-          output: outputLocation,
-          hint
-        }
-      }
+      peerId,
+      addr,
+      relayDirection: relayDirection ? { type: RelayDirection[relayDirection] } : null
     })
   }
 
-  generateBIP39(outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return invoke('plugin:stronghold|execute_procedure', {
+  changeRelayDirection(peerId: string, relayDirection: RelayDirection): Promise<string> {
+    return invoke('plugin:stronghold|change_relay_direction', {
       snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'BIP39Generate',
-        payload: {
-          output: outputLocation,
-          passphrase,
-          hint
-        }
-      }
+      peerId,
+      relayDirection: { type: RelayDirection[relayDirection] }
     })
   }
 
-  getPublicKey(privateKeyLocation: Location): Promise<string> {
-    return invoke('plugin:stronghold|execute_procedure', {
+  removeRelay(peerId: string): Promise<void> {
+    return invoke('plugin:stronghold|remove_relay', {
       snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'Ed25519PublicKey',
-        payload: {
-          privateKey: privateKeyLocation
-        }
-      }
+      peerId
     })
   }
 
-  sign(privateKeyLocation: Location, msg: string): Promise<string> {
-    return invoke('plugin:stronghold|execute_procedure', {
+  allowAllRequests(peers: string[], setDefault = false): Promise<void> {
+    return invoke('plugin:stronghold|allow_all_requests', {
       snapshotPath: this.path,
-      vault: this.vault,
-      procedure: {
-        type: 'Ed25519Sign',
-        payload: {
-          privateKey: privateKeyLocation,
-          msg
-        }
-      }
+      peers,
+      setDefault
     })
+  }
+
+  rejectAllRequests(peers: string[], setDefault = false): Promise<void> {
+    return invoke('plugin:stronghold|reject_all_requests', {
+      snapshotPath: this.path,
+      peers,
+      setDefault
+    })
+  }
+
+  allowRequests(peers: string[], permissions: RequestPermission[], changeDefault = false): Promise<void> {
+    return invoke('plugin:stronghold|allow_requests', {
+      snapshotPath: this.path,
+      peers,
+      requests: permissions.map(p => ({ type: RequestPermission[p] })),
+      changeDefault
+    })
+  }
+
+  rejectRequests(peers: string[], permissions: RequestPermission[], changeDefault = false): Promise<void> {
+    return invoke('plugin:stronghold|reject_requests', {
+      snapshotPath: this.path,
+      peers,
+      requests: permissions.map(p => ({ type: RequestPermission[p] })),
+      changeDefault
+    })
+  }
+
+  removeFirewallRules(peers: string[]): Promise<void> {
+    return invoke('plugin:stronghold|remove_firewall_rules', {
+      snapshotPath: this.path,
+      peers
+    })
+  }
+
+  getRemoteVault(peerId: string): RemoteVault {
+    return new RemoteVault(this.path, peerId)
+  }
+
+  getRemoteStore(peerId: string): RemoteStore {
+    return new RemoteStore(this.path, peerId)
   }
 }
 
@@ -303,5 +482,11 @@ export class Stronghold {
     return () => {
       statusChangeListeners[this.path] = statusChangeListeners[this.path].filter(listener => listener.id !== id)
     }
+  }
+
+  spawnCommunication(): Promise<Communication> {
+    return invoke('plugin:stronghold|spawn_communication', {
+      snapshotPath: this.path
+    }).then(() => new Communication(this.path))
   }
 }

@@ -29,6 +29,7 @@ fn api_instances() -> &'static Arc<Mutex<HashMap<PathBuf, Api>>> {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SwarmInfoDto {
     pub peer_id: String,
     pub listening_addresses: Vec<Multiaddr>,
