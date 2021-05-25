@@ -2,10 +2,12 @@ use async_std::{
     sync::Mutex,
     task::{sleep, spawn},
 };
-use iota_stronghold::{
-    Location, ProcResult, Procedure, RecordHint, ResultMessage, Stronghold, StrongholdFlags,
-    VaultFlags,
+pub use engine::vault::RecordId;
+pub use iota_stronghold::{
+    Location, Multiaddr, PeerId, ProcResult, Procedure, RecordHint, ResultMessage, Stronghold,
+    StrongholdFlags, VaultFlags,
 };
+use iota_stronghold::{RelayDirection, SHRequestPermission};
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
 use serde::{ser::Serializer, Serialize};
@@ -38,6 +40,12 @@ struct StatusChangeEventHandler {
 
 type StrongholdStatusChangeListeners = Arc<Mutex<Vec<StatusChangeEventHandler>>>;
 
+#[derive(Debug, Clone)]
+pub struct SwarmInfo {
+    pub peer_id: PeerId,
+    pub listening_addresses: Vec<Multiaddr>,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("`{0}`")]
@@ -48,6 +56,8 @@ pub enum Error {
     FailedToPerformAction(String),
     #[error("snapshot password not set")]
     PasswordNotSet,
+    #[error(transparent)]
+    InvalidPeer(Box<dyn std::error::Error + Send>),
 }
 
 impl Serialize for Error {
@@ -394,6 +404,82 @@ impl Vault {
     }
 }
 
+pub struct RemoteStore {
+    peer_id: PeerId,
+    snapshot_path: PathBuf,
+}
+
+impl RemoteStore {
+    /// Gets a record.
+    pub async fn get_record(&self, location: Location) -> Result<String> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+
+        let (data, status) = runtime
+            .stronghold
+            .read_from_remote_store(self.peer_id, location)
+            .await;
+        stronghold_response_to_result(status).map_err(|_| Error::RecordNotFound)?;
+        Ok(String::from_utf8_lossy(&data).to_string())
+    }
+
+    /// Saves a record.
+    pub async fn save_record(
+        &self,
+        location: Location,
+        record: String,
+        lifetime: Option<Duration>,
+    ) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .write_to_remote_store(self.peer_id, location, record.as_bytes().to_vec(), lifetime)
+                .await,
+        )?;
+
+        Ok(())
+    }
+}
+
+pub struct RemoteVault {
+    peer_id: PeerId,
+    snapshot_path: PathBuf,
+}
+
+impl RemoteVault {
+    /// Returns a list of the available records and their RecordHint values of a remote vault.
+    /// It is required that the peer has successfully been added with the add_peer method.
+    pub async fn list_remote_hints_and_ids(
+        &self,
+        location: Location,
+    ) -> Result<Vec<(RecordId, RecordHint)>> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+
+        let (list, status) = runtime
+            .stronghold
+            .list_remote_hints_and_ids(self.peer_id, location.vault_path().to_vec())
+            .await;
+        stronghold_response_to_result(status)?;
+
+        Ok(list)
+    }
+
+    pub async fn execute_procedure(&self, procedure: Procedure) -> Result<ProcResult> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+
+        let result = runtime
+            .stronghold
+            .remote_runtime_exec(self.peer_id, procedure)
+            .await;
+        Ok(result)
+    }
+}
+
 #[derive(Debug)]
 pub struct Api {
     snapshot_path: PathBuf,
@@ -528,6 +614,148 @@ impl Api {
 
         access_store.insert(self.snapshot_path.clone(), Instant::now());
         passwords.insert(self.snapshot_path.clone(), Arc::new(Password(password)));
+    }
+
+    pub async fn spawn_communication(&self) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(runtime.stronghold.spawn_communication())?;
+        Ok(())
+    }
+
+    pub async fn stop_communication(&self) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        runtime.stronghold.stop_communication();
+        Ok(())
+    }
+
+    pub async fn start_listening(&self, addr: Option<Multiaddr>) -> Result<Multiaddr> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(runtime.stronghold.start_listening(addr).await)
+    }
+
+    pub async fn get_swarm_info(&self) -> Result<SwarmInfo> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        let (peer_id, listening_addresses, _) =
+            stronghold_response_to_result(runtime.stronghold.get_swarm_info().await)?;
+        Ok(SwarmInfo {
+            peer_id,
+            listening_addresses,
+        })
+    }
+
+    pub async fn add_peer(
+        &self,
+        peer_id: PeerId,
+        addr: Option<Multiaddr>,
+        relay_direction: Option<RelayDirection>,
+    ) -> Result<PeerId> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .add_peer(peer_id, addr, relay_direction)
+                .await,
+        )
+    }
+
+    pub async fn change_relay_direction(
+        &self,
+        peer_id: PeerId,
+        relay_direction: RelayDirection,
+    ) -> Result<PeerId> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .change_relay_direction(peer_id, relay_direction)
+                .await,
+        )
+    }
+
+    pub async fn remove_relay(&self, peer_id: PeerId) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(runtime.stronghold.remove_relay(peer_id).await)
+    }
+
+    pub async fn allow_all_requests(&self, peers: Vec<PeerId>, set_default: bool) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .allow_all_requests(peers, set_default)
+                .await,
+        )
+    }
+
+    pub async fn reject_all_requests(&self, peers: Vec<PeerId>, set_default: bool) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .reject_all_requests(peers, set_default)
+                .await,
+        )
+    }
+
+    pub async fn allow_requests(
+        &self,
+        peers: Vec<PeerId>,
+        change_default: bool,
+        requests: Vec<SHRequestPermission>,
+    ) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .allow_requests(peers, change_default, requests)
+                .await,
+        )
+    }
+
+    pub async fn reject_requests(
+        &self,
+        peers: Vec<PeerId>,
+        change_default: bool,
+        requests: Vec<SHRequestPermission>,
+    ) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(
+            runtime
+                .stronghold
+                .reject_requests(peers, change_default, requests)
+                .await,
+        )
+    }
+
+    pub async fn remove_firewall_rules(&self, peers: Vec<PeerId>) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
+        stronghold_response_to_result(runtime.stronghold.remove_firewall_rules(peers).await)
+    }
+
+    pub fn get_remote_vault(&self, peer_id: PeerId) -> RemoteVault {
+        RemoteVault {
+            peer_id,
+            snapshot_path: self.snapshot_path.clone(),
+        }
+    }
+
+    pub fn get_remote_store(&self, peer_id: PeerId) -> RemoteStore {
+        RemoteStore {
+            peer_id,
+            snapshot_path: self.snapshot_path.clone(),
+        }
     }
 }
 
@@ -671,7 +899,7 @@ mod tests {
 
                 let store = api.get_store("", vec![]);
                 let res = store.get_record(get_location("passwordexpires")).await;
-                assert_eq!(res.is_err(), true);
+                assert!(res.is_err());
                 let error = res.unwrap_err();
                 if let super::Error::PasswordNotSet = error {
                     let status = api.get_status().await;
@@ -729,12 +957,12 @@ mod tests {
 
                 let id = "actionkeepspassword1".to_string();
                 let res = store.get_record(get_location(&id)).await;
-                assert_eq!(res.is_ok(), true);
+                assert!(res.is_ok());
 
                 std::thread::sleep(interval * 2);
 
                 let res = store.get_record(get_location(&id)).await;
-                assert_eq!(res.is_err(), true);
+                assert!(res.is_err());
                 if let super::Error::PasswordNotSet = res.unwrap_err() {
                     let status = api.get_status().await;
                     if let super::SnapshotStatus::Unlocked(_) = status.snapshot {
