@@ -1,28 +1,107 @@
 use crypto::keys::slip10::Chain;
-use iota_stronghold::{
-    Location, ProcResult, Procedure, RecordHint, SLIP10DeriveInput, StrongholdFlags, VaultFlags,
+pub use iota_stronghold::{
+    Location, Multiaddr, PeerId, ProcResult, Procedure, RecordHint, SLIP10DeriveInput,
+    StrongholdFlags, VaultFlags,
 };
+use iota_stronghold::{RelayDirection, SHRequestPermission};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Params, Window};
+use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Runtime, Window};
 
 use std::{
     collections::HashMap,
     convert::{Into, TryInto},
     path::PathBuf,
+    str::FromStr,
     sync::Arc,
     time::Duration,
 };
 
 /// The stronghold interface.
 pub mod stronghold;
-use stronghold::{Api, Status};
+use stronghold::{Api, Status, SwarmInfo};
 
 type Result<T> = std::result::Result<T, stronghold::Error>;
 
 fn api_instances() -> &'static Arc<Mutex<HashMap<PathBuf, Api>>> {
     static API: Lazy<Arc<Mutex<HashMap<PathBuf, Api>>>> = Lazy::new(Default::default);
     &API
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwarmInfoDto {
+    pub peer_id: String,
+    pub listening_addresses: Vec<Multiaddr>,
+}
+
+impl From<SwarmInfo> for SwarmInfoDto {
+    fn from(info: SwarmInfo) -> Self {
+        Self {
+            peer_id: info.peer_id.to_string(),
+            listening_addresses: info.listening_addresses,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", content = "payload")]
+pub enum RelayDirectionDto {
+    Dialing,
+    Listening,
+    Both,
+}
+
+impl From<RelayDirectionDto> for RelayDirection {
+    fn from(direction: RelayDirectionDto) -> Self {
+        match direction {
+            RelayDirectionDto::Dialing => Self::Dialing,
+            RelayDirectionDto::Listening => Self::Listening,
+            RelayDirectionDto::Both => Self::Both,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", content = "payload")]
+enum SHRequestPermissionDto {
+    CheckVault,
+    CheckRecord,
+    WriteToStore,
+    ReadFromStore,
+    DeleteFromStore,
+    CreateNewVault,
+    WriteToVault,
+    RevokeData,
+    GarbageCollect,
+    ListIds,
+    ReadSnapshot,
+    WriteSnapshot,
+    FillSnapshot,
+    ClearCache,
+    ControlRequest,
+}
+
+impl From<SHRequestPermissionDto> for SHRequestPermission {
+    fn from(direction: SHRequestPermissionDto) -> Self {
+        match direction {
+            SHRequestPermissionDto::CheckVault => Self::CheckVault,
+            SHRequestPermissionDto::CheckRecord => Self::CheckRecord,
+            SHRequestPermissionDto::WriteToStore => Self::WriteToStore,
+            SHRequestPermissionDto::ReadFromStore => Self::ReadFromStore,
+            SHRequestPermissionDto::DeleteFromStore => Self::DeleteFromStore,
+            SHRequestPermissionDto::CreateNewVault => Self::CreateNewVault,
+            SHRequestPermissionDto::WriteToVault => Self::WriteToVault,
+            SHRequestPermissionDto::RevokeData => Self::RevokeData,
+            SHRequestPermissionDto::GarbageCollect => Self::GarbageCollect,
+            SHRequestPermissionDto::ListIds => Self::ListIds,
+            SHRequestPermissionDto::ReadSnapshot => Self::ReadSnapshot,
+            SHRequestPermissionDto::WriteSnapshot => Self::WriteSnapshot,
+            SHRequestPermissionDto::FillSnapshot => Self::FillSnapshot,
+            SHRequestPermissionDto::ClearCache => Self::ClearCache,
+            SHRequestPermissionDto::ControlRequest => Self::ControlRequest,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -339,18 +418,8 @@ async fn remove_store_record(
     Ok(())
 }
 
-#[tauri::command]
-async fn execute_procedure(
-    snapshot_path: PathBuf,
-    vault: VaultDto,
-    procedure: ProcedureDto,
-) -> Result<ProcResultDto> {
-    let api_instances = api_instances().lock().await;
-    let api = api_instances.get(&snapshot_path).unwrap();
-    let vault = api.get_vault(vault.name, array_into(vault.flags));
-    let result = vault.execute_procedure(procedure.into()).await?;
-
-    let result = match result {
+fn map_result(result: ProcResult) -> Result<ProcResultDto> {
+    let r = match result {
         ProcResult::SLIP10Generate(status) => {
             stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::SLIP10Generate
@@ -383,15 +452,239 @@ async fn execute_procedure(
             return Err(stronghold::Error::FailedToPerformAction(e));
         }
     };
-
-    Ok(result)
+    Ok(r)
 }
 
-pub struct TauriStronghold<P: Params> {
-    invoke_handler: Box<dyn Fn(Invoke<P>) + Send + Sync>,
+#[tauri::command]
+async fn execute_procedure(
+    snapshot_path: PathBuf,
+    vault: VaultDto,
+    procedure: ProcedureDto,
+) -> Result<ProcResultDto> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    let result = vault.execute_procedure(procedure.into()).await?;
+    Ok(map_result(result)?)
 }
 
-impl<P: Params> Default for TauriStronghold<P> {
+#[tauri::command]
+async fn spawn_communication(snapshot_path: PathBuf) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.spawn_communication().await
+}
+
+#[tauri::command]
+async fn stop_communication(snapshot_path: PathBuf) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.stop_communication().await
+}
+
+#[tauri::command]
+async fn start_listening(snapshot_path: PathBuf, addr: Option<Multiaddr>) -> Result<Multiaddr> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.start_listening(addr).await
+}
+
+#[tauri::command]
+async fn get_swarm_info(snapshot_path: PathBuf) -> Result<SwarmInfoDto> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.get_swarm_info().await.map(Into::into)
+}
+
+#[tauri::command]
+async fn add_peer(
+    snapshot_path: PathBuf,
+    peer_id: String,
+    addr: Option<Multiaddr>,
+    relay_direction: Option<RelayDirectionDto>,
+) -> Result<String> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.add_peer(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        addr,
+        relay_direction.map(Into::into),
+    )
+    .await
+    .map(|peer| peer.to_string())
+}
+
+#[tauri::command]
+async fn change_relay_direction(
+    snapshot_path: PathBuf,
+    peer_id: String,
+    relay_direction: RelayDirectionDto,
+) -> Result<String> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.change_relay_direction(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        relay_direction.into(),
+    )
+    .await
+    .map(|peer| peer.to_string())
+}
+
+#[tauri::command]
+async fn remove_relay(snapshot_path: PathBuf, peer_id: String) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    api.remove_relay(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+    )
+    .await
+}
+
+#[tauri::command]
+async fn allow_all_requests(
+    snapshot_path: PathBuf,
+    peers: Vec<String>,
+    set_default: bool,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let mut parsed_peers = Vec::new();
+    for peer_id in peers {
+        parsed_peers.push(
+            PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        );
+    }
+    api.allow_all_requests(parsed_peers, set_default).await
+}
+
+#[tauri::command]
+async fn reject_all_requests(
+    snapshot_path: PathBuf,
+    peers: Vec<String>,
+    set_default: bool,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let mut parsed_peers = Vec::new();
+    for peer_id in peers {
+        parsed_peers.push(
+            PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        );
+    }
+    api.reject_all_requests(parsed_peers, set_default).await
+}
+
+#[tauri::command]
+async fn allow_requests(
+    snapshot_path: PathBuf,
+    peers: Vec<String>,
+    change_default: bool,
+    requests: Vec<SHRequestPermissionDto>,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let mut parsed_peers = Vec::new();
+    for peer_id in peers {
+        parsed_peers.push(
+            PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        );
+    }
+    api.allow_requests(
+        parsed_peers,
+        change_default,
+        requests.into_iter().map(Into::into).collect(),
+    )
+    .await
+}
+
+#[tauri::command]
+async fn reject_requests(
+    snapshot_path: PathBuf,
+    peers: Vec<String>,
+    change_default: bool,
+    requests: Vec<SHRequestPermissionDto>,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let mut parsed_peers = Vec::new();
+    for peer_id in peers {
+        parsed_peers.push(
+            PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        );
+    }
+    api.reject_requests(
+        parsed_peers,
+        change_default,
+        requests.into_iter().map(Into::into).collect(),
+    )
+    .await
+}
+
+#[tauri::command]
+async fn remove_firewall_rules(snapshot_path: PathBuf, peers: Vec<String>) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let mut parsed_peers = Vec::new();
+    for peer_id in peers {
+        parsed_peers.push(
+            PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+        );
+    }
+    api.remove_firewall_rules(parsed_peers).await
+}
+
+#[tauri::command]
+async fn get_remote_store_record(
+    snapshot_path: PathBuf,
+    peer_id: String,
+    location: LocationDto,
+) -> Result<String> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let store = api.get_remote_store(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+    );
+    let record = store.get_record(location.into()).await?;
+    Ok(record)
+}
+
+#[tauri::command]
+async fn save_remote_store_record(
+    snapshot_path: PathBuf,
+    peer_id: String,
+    location: LocationDto,
+    record: String,
+    lifetime: Option<Duration>,
+) -> Result<()> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let store = api.get_remote_store(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+    );
+    store.save_record(location.into(), record, lifetime).await?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn execute_remote_procedure(
+    snapshot_path: PathBuf,
+    peer_id: String,
+    procedure: ProcedureDto,
+) -> Result<ProcResultDto> {
+    let api_instances = api_instances().lock().await;
+    let api = api_instances.get(&snapshot_path).unwrap();
+    let vault = api.get_remote_vault(
+        PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
+    );
+    let result = vault.execute_procedure(procedure.into()).await?;
+    Ok(map_result(result)?)
+}
+
+pub struct TauriStronghold<R: Runtime> {
+    invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
+}
+
+impl<R: Runtime> Default for TauriStronghold<R> {
     fn default() -> Self {
         Self {
             invoke_handler: Box::new(tauri::generate_handler![
@@ -405,7 +698,22 @@ impl<P: Params> Default for TauriStronghold<P> {
                 remove_record,
                 save_store_record,
                 remove_store_record,
-                execute_procedure
+                execute_procedure,
+                spawn_communication,
+                stop_communication,
+                start_listening,
+                get_swarm_info,
+                add_peer,
+                change_relay_direction,
+                remove_relay,
+                allow_all_requests,
+                reject_all_requests,
+                allow_requests,
+                reject_requests,
+                remove_firewall_rules,
+                get_remote_store_record,
+                save_remote_store_record,
+                execute_remote_procedure
             ]),
         }
     }
@@ -426,12 +734,12 @@ struct StatusChangeEvent<'a> {
     status: &'a stronghold::Status,
 }
 
-impl<P: Params> Plugin<P> for TauriStronghold<P> {
+impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
     fn name(&self) -> &'static str {
         "stronghold"
     }
 
-    fn created(&mut self, window: Window<P>) {
+    fn created(&mut self, window: Window<R>) {
         tauri::async_runtime::block_on(stronghold::on_status_change(
             move |snapshot_path, status| {
                 let _ = window.emit(
@@ -447,7 +755,7 @@ impl<P: Params> Plugin<P> for TauriStronghold<P> {
         ))
     }
 
-    fn extend_api(&mut self, invoke: Invoke<P>) {
+    fn extend_api(&mut self, invoke: Invoke<R>) {
         (self.invoke_handler)(invoke)
     }
 }
