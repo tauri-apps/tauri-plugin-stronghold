@@ -739,7 +739,7 @@ impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
         "stronghold"
     }
 
-    fn created(&mut self, window: Window<R>) {
+  /*  fn created(&mut self, window: Window<R>) {
         tauri::async_runtime::block_on(stronghold::on_status_change(
             move |snapshot_path, status| {
                 let _ = window.emit(
@@ -753,7 +753,7 @@ impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
                 );
             },
         ))
-    }
+    }*/
 
     fn extend_api(&mut self, invoke: Invoke<R>) {
         (self.invoke_handler)(invoke)
