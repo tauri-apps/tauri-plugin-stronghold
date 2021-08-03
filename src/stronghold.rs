@@ -103,7 +103,7 @@ fn status_change_listeners() -> &'static StrongholdStatusChangeListeners {
 async fn emit_status_change(snapshot_path: &Path, status: &Status) {
     let mut listeners = status_change_listeners().lock().await;
     for listener in listeners.deref_mut() {
-        (listener.on_event)(&snapshot_path, &status)
+        (listener.on_event)(snapshot_path, status)
     }
 }
 
@@ -788,7 +788,7 @@ async fn check_snapshot(
                         .read_snapshot(
                             client_path.to_vec(),
                             None,
-                            &get_password_if_needed(&snapshot_path, password)
+                            &get_password_if_needed(snapshot_path, password)
                                 .await?
                                 .0
                                 .to_vec(),
@@ -832,7 +832,7 @@ async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -
         .as_ref()
     {
         if persist && !runtime.spawned_client_paths.is_empty() {
-            save_snapshot(&mut runtime, &curr_snapshot_path).await?;
+            save_snapshot(&mut runtime, curr_snapshot_path).await?;
         }
         for path in &runtime.spawned_client_paths {
             stronghold_response_to_result(

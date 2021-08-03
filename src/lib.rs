@@ -6,7 +6,7 @@ pub use iota_stronghold::{
 use iota_stronghold::{RelayDirection, SHRequestPermission};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Params, Window};
+use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Runtime, Window};
 
 use std::{
     collections::HashMap,
@@ -680,11 +680,11 @@ async fn execute_remote_procedure(
     Ok(map_result(result)?)
 }
 
-pub struct TauriStronghold<P: Params> {
-    invoke_handler: Box<dyn Fn(Invoke<P>) + Send + Sync>,
+pub struct TauriStronghold<R: Runtime> {
+    invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
 }
 
-impl<P: Params> Default for TauriStronghold<P> {
+impl<R: Runtime> Default for TauriStronghold<R> {
     fn default() -> Self {
         Self {
             invoke_handler: Box::new(tauri::generate_handler![
@@ -734,18 +734,16 @@ struct StatusChangeEvent<'a> {
     status: &'a stronghold::Status,
 }
 
-impl<P: Params> Plugin<P> for TauriStronghold<P> {
+impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
     fn name(&self) -> &'static str {
         "stronghold"
     }
 
-    fn created(&mut self, window: Window<P>) {
+    fn created(&mut self, window: Window<R>) {
         tauri::async_runtime::block_on(stronghold::on_status_change(
             move |snapshot_path, status| {
                 let _ = window.emit(
-                    &"stronghold://status-change".parse().unwrap_or_else(|_| {
-                        panic!("Stronghold status change event not parsed by your Event struct")
-                    }),
+                    "stronghold://status-change",
                     Some(StatusChangeEvent {
                         snapshot_path: snapshot_path.to_path_buf(),
                         status,
@@ -755,7 +753,7 @@ impl<P: Params> Plugin<P> for TauriStronghold<P> {
         ))
     }
 
-    fn extend_api(&mut self, invoke: Invoke<P>) {
+    fn extend_api(&mut self, invoke: Invoke<R>) {
         (self.invoke_handler)(invoke)
     }
 }
