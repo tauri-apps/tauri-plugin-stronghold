@@ -22,6 +22,10 @@ slog = "2.7"
 hex = "0.4"
 zeroize = { version = "1.2", features = ["zeroize_derive"] }
 
+[patch.crates-io]
+aesni = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
+aes-soft = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
+
 [dev-dependencies]
 rand = "0.8"
 rusty-fork = "0.3"
