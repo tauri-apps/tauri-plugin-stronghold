@@ -40,7 +40,7 @@ Use in `src-tauri/src/main.rs`:
 use tauri_plugin_stronghold::TauriStronghold;
 
 fn main() {
-    tauri::Builder::new()
+    tauri::Builder::default()
         .plugin(TauriStronghold {})
         .build()
         .run();
