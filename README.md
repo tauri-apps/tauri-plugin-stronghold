@@ -33,6 +33,11 @@ For more details and usage see [the svelte demo](examples/svelte-app/src/App.sve
 git = "https://github.com/tauri-apps/tauri-plugin-stronghold"
 tag = "v0.1.0"
 #branch = "main"
+
+# temporary fix to version resolution
+[patch.crates-io]
+aesni = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
+aes-soft = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
 ```
 
 Use in `src-tauri/src/main.rs`:
