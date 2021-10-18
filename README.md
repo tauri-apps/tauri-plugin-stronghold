@@ -70,11 +70,11 @@ yarn add github:tauri-apps/tauri-plugin-stronghold#6749525a47a95439c9703d3a49b94
 `package.json`
 ```json
   "dependencies": {
-    "tauri-plugin-stronghold-api": "tauri-apps/tauri-plugin-stronghold#v0.2.0",
+    "tauri-plugin-stronghold-api": "github:tauri-apps/tauri-plugin-stronghold#v0.2.0",
 ```
 
 Use within your JS/TS:
-```
+```ts
 import { Stronghold, Location } from 'tauri-plugin-stronghold-api'
 ```
 
