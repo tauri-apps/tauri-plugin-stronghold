@@ -5,10 +5,13 @@
     "Tauri Programme within The Commons Conservancy"
   ],
   "description": "API wrapper for the Tauri Plugin for Stronghold ",
-  "browser": "webview-dist/index.js",
-  "main": "webview-dist/index.js",
+  "browser": "webview-dist/index.min.js",
+  "module": "webview-dist/index.mjs",
   "types": "webview-dist/index.d.ts",
   "private": "true",
+  "files": [
+    "webview-dist"
+  ],
   "scripts": {
     "build": "rollup -c ./webview-src/rollup.config.js",
     "prepublishOnly": "yarn build",
@@ -20,6 +23,7 @@
     "@rollup/plugin-typescript": "8.3.0",
     "rollup": "2.58.3",
     "rollup-plugin-terser": "7.0.2",
+    "type-fest": "^2.5.2",
     "typescript": "4.4.4"
   },
   "dependencies": {
