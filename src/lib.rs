@@ -140,6 +140,13 @@ struct VaultDto {
 }
 
 #[derive(Deserialize)]
+struct StoreDto {
+    name: String,
+    #[serde(default)]
+    flags: Vec<StrongholdFlagDto>,
+}
+
+#[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum LocationDto {
     Generic { vault: String, record: String },
@@ -343,12 +350,12 @@ async fn get_status(snapshot_path: PathBuf) -> Result<Status> {
 #[tauri::command]
 async fn get_store_record(
     snapshot_path: PathBuf,
-    vault: VaultDto,
+    store: StoreDto,
     location: LocationDto,
 ) -> Result<String> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(store.name, array_into(store.flags));
     let record = store.get_record(location.into()).await?;
     Ok(record)
 }
@@ -393,14 +400,14 @@ async fn remove_record(
 #[tauri::command]
 async fn save_store_record(
     snapshot_path: PathBuf,
-    vault: VaultDto,
+    store: StoreDto,
     location: LocationDto,
     record: String,
     lifetime: Option<Duration>,
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(store.name, array_into(store.flags));
     store.save_record(location.into(), record, lifetime).await?;
     Ok(())
 }
@@ -408,12 +415,12 @@ async fn save_store_record(
 #[tauri::command]
 async fn remove_store_record(
     snapshot_path: PathBuf,
-    vault: VaultDto,
+    store: StoreDto,
     location: LocationDto,
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(store.name, array_into(store.flags));
     store.remove_record(location.into()).await?;
     Ok(())
 }

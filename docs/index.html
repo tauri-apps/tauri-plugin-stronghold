@@ -1,0 +1,75 @@
+<!DOCTYPE html><html class="default"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>tauri-plugin-stronghold-api</title><meta name="description" content="Documentation for tauri-plugin-stronghold-api"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">tauri-plugin-stronghold-api</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1>tauri-plugin-stronghold-api</h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography">
+<a href="#tauri-plugin-stronghold" id="tauri-plugin-stronghold" style="color: inherit; text-decoration: none;">
+  <h1>Tauri Plugin Stronghold</h1>
+</a>
+<p><a href="https://tauri-apps.github.io/tauri-plugin-stronghold"><img src="https://img.shields.io/badge/documentation-github.io-purple.svg" alt="devto"></a>
+<img src="https://github.com/tauri-apps/tauri-plugin-stronghold/workflows/Test/badge.svg" alt="Test"></p>
+<p>This plugin provides a &quot;classical&quot; Tauri Plugin Interface to the <a href="https://github.com/iotaledger/stronghold.rs">IOTA Stronghold</a> encrypted database, secure runtime, and peer-to-peer service.</p>
+
+<a href="#architecture" id="architecture" style="color: inherit; text-decoration: none;">
+  <h2>Architecture</h2>
+</a>
+<p>This repo shape might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git hashes. Of course, it can also be consumed via Cargo and NPM.</p>
+
+<a href="#src" id="src" style="color: inherit; text-decoration: none;">
+  <h3><code>/src</code></h3>
+</a>
+<p>Rust source code that contains the plugin definition and Stronghold features.</p>
+
+<a href="#webview-src" id="webview-src" style="color: inherit; text-decoration: none;">
+  <h3><code>/webview-src</code></h3>
+</a>
+<p>Typescript source for the /dist folder that provides an API to interface with the rust code.</p>
+
+<a href="#webview-dist" id="webview-dist" style="color: inherit; text-decoration: none;">
+  <h3><code>/webview-dist</code></h3>
+</a>
+<p>Tree-shakeable transpiled JS to be consumed in a WRY webview.</p>
+
+<a href="#bindings" id="bindings" style="color: inherit; text-decoration: none;">
+  <h3><code>/bindings</code></h3>
+</a>
+<p>Forthcoming tauri bindings to other programming languages, like DENO.</p>
+
+<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+  <h2>Installation</h2>
+</a>
+<p>There are three general methods of installation that we can recommend.</p>
+<ol>
+<li>Pull sources directly from Github using git tags / revision hashes (most secure, good for developement, shown below)</li>
+<li>Git submodule install this repo in your tauri project and then use <code>file</code> protocol to ingest the source</li>
+<li>Use crates.io and npm (easiest, and requires you to trust that our publishing pipeline worked)</li>
+</ol>
+<p>For more details and usage see <a href="examples/svelte-app/src/App.svelte">the svelte demo</a>. Please note, below in the dependencies you can also lock to a revision/tag in both the <code>Cargo.toml</code> and <code>package.json</code></p>
+
+<a href="#rust" id="rust" style="color: inherit; text-decoration: none;">
+  <h3>RUST</h3>
+</a>
+<p><code>src-tauri/Cargo.toml</code></p>
+<pre><code class="language-yaml"><span class="hl-0">[</span><span class="hl-1">dependencies.tauri-plugin-stronghold</span><span class="hl-0">]</span><br/><span class="hl-1">git = &quot;https://github.com/tauri-apps/tauri-plugin-stronghold&quot;</span><br/><span class="hl-1">tag = &quot;v0.1.0&quot;</span><br/><span class="hl-2">#branch = &quot;main&quot;</span><br/><br/><span class="hl-2"># temporary fix to version resolution</span><br/><span class="hl-0">[</span><span class="hl-1">patch.crates-io</span><span class="hl-0">]</span><br/><span class="hl-1">aesni = { git = &quot;https://github.com/RustCrypto/block-ciphers/&quot;, rev = &quot;268dadc93df08928de3bc510ddf20aabfcc49435&quot; }</span><br/><span class="hl-1">aes-soft = { git = &quot;https://github.com/RustCrypto/block-ciphers/&quot;, rev = &quot;268dadc93df08928de3bc510ddf20aabfcc49435&quot; }</span>
+</code></pre>
+<p>Use in <code>src-tauri/src/main.rs</code>:</p>
+<pre><code class="language-rust"><span class="hl-3">use</span><span class="hl-0"> </span><span class="hl-4">tauri_plugin_stronghold</span><span class="hl-0">::</span><span class="hl-4">TauriStronghold</span><span class="hl-0">;</span><br/><br/><span class="hl-3">fn</span><span class="hl-0"> </span><span class="hl-5">main</span><span class="hl-0">() {</span><br/><span class="hl-0">    </span><span class="hl-4">tauri</span><span class="hl-0">::</span><span class="hl-4">Builder</span><span class="hl-0">::</span><span class="hl-5">default</span><span class="hl-0">()</span><br/><span class="hl-0">        .</span><span class="hl-5">plugin</span><span class="hl-0">(</span><span class="hl-4">TauriStronghold</span><span class="hl-0"> {})</span><br/><span class="hl-0">        .</span><span class="hl-5">build</span><span class="hl-0">()</span><br/><span class="hl-0">        .</span><span class="hl-5">run</span><span class="hl-0">();</span><br/><span class="hl-0">}</span>
+</code></pre>
+
+<a href="#webview" id="webview" style="color: inherit; text-decoration: none;">
+  <h3>WEBVIEW</h3>
+</a>
+<p><code>Install from a tagged release</code></p>
+<pre><code><span class="hl-6">npm</span><span class="hl-0"> </span><span class="hl-6">install</span><span class="hl-0"> </span><span class="hl-7">github</span><span class="hl-0">:</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">apps</span><span class="hl-0">/</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">plugin</span><span class="hl-0">-</span><span class="hl-6">stronghold</span><span class="hl-0">#</span><span class="hl-6">v0</span><span class="hl-0">.</span><span class="hl-8">2.0</span><br/><span class="hl-0"># </span><span class="hl-6">or</span><br/><span class="hl-6">yarn</span><span class="hl-0"> </span><span class="hl-6">add</span><span class="hl-0"> </span><span class="hl-7">github</span><span class="hl-0">:</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">apps</span><span class="hl-0">/</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">plugin</span><span class="hl-0">-</span><span class="hl-6">stronghold</span><span class="hl-0">#</span><span class="hl-6">v0</span><span class="hl-0">.</span><span class="hl-8">2.0</span>
+</code></pre>
+<p><code>Install from a commit</code></p>
+<pre><code><span class="hl-6">npm</span><span class="hl-0"> </span><span class="hl-6">install</span><span class="hl-0"> </span><span class="hl-7">github</span><span class="hl-0">:</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">apps</span><span class="hl-0">/</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">plugin</span><span class="hl-0">-</span><span class="hl-6">stronghold</span><span class="hl-0">#6749525</span><span class="hl-6">a47a95439c9703d3a49b94ac65660998f</span><br/><span class="hl-0"># </span><span class="hl-6">or</span><br/><span class="hl-6">yarn</span><span class="hl-0"> </span><span class="hl-6">add</span><span class="hl-0"> </span><span class="hl-7">github</span><span class="hl-0">:</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">apps</span><span class="hl-0">/</span><span class="hl-6">tauri</span><span class="hl-0">-</span><span class="hl-6">plugin</span><span class="hl-0">-</span><span class="hl-6">stronghold</span><span class="hl-0">#6749525</span><span class="hl-6">a47a95439c9703d3a49b94ac65660998f</span>
+</code></pre>
+<p><code>package.json</code></p>
+<pre><code class="language-json"><span class="hl-0">  </span><span class="hl-9">&quot;dependencies&quot;</span><span class="hl-0">: {</span><br/><span class="hl-0">    </span><span class="hl-10">&quot;tauri-plugin-stronghold-api&quot;</span><span class="hl-0">: </span><span class="hl-9">&quot;github:tauri-apps/tauri-plugin-stronghold#v0.2.0&quot;</span><span class="hl-0">,</span>
+</code></pre>
+<p>Use within your JS/TS:</p>
+<pre><code class="language-ts"><span class="hl-11">import</span><span class="hl-0"> { </span><span class="hl-6">Stronghold</span><span class="hl-0">, </span><span class="hl-6">Location</span><span class="hl-0"> } </span><span class="hl-11">from</span><span class="hl-0"> </span><span class="hl-9">&#39;tauri-plugin-stronghold-api&#39;</span>
+</code></pre>
+
+<a href="#license" id="license" style="color: inherit; text-decoration: none;">
+  <h1>License</h1>
+</a>
+<p>MIT / Apache-2.0</p>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-enum"><a href="enums/RelayDirection.html" class="tsd-kind-icon">Relay<wbr/>Direction</a></li><li class="tsd-kind-enum"><a href="enums/RequestPermission.html" class="tsd-kind-icon">Request<wbr/>Permission</a></li><li class="tsd-kind-enum"><a href="enums/StrongholdFlag.html" class="tsd-kind-icon">Stronghold<wbr/>Flag</a></li><li class="tsd-kind-class"><a href="classes/Communication.html" class="tsd-kind-icon">Communication</a></li><li class="tsd-kind-class"><a href="classes/Location.html" class="tsd-kind-icon">Location</a></li><li class="tsd-kind-class"><a href="classes/RemoteStore.html" class="tsd-kind-icon">Remote<wbr/>Store</a></li><li class="tsd-kind-class"><a href="classes/RemoteVault.html" class="tsd-kind-icon">Remote<wbr/>Vault</a></li><li class="tsd-kind-class"><a href="classes/Store.html" class="tsd-kind-icon">Store</a></li><li class="tsd-kind-class"><a href="classes/Stronghold.html" class="tsd-kind-icon">Stronghold</a></li><li class="tsd-kind-class"><a href="classes/Vault.html" class="tsd-kind-icon">Vault</a></li><li class="tsd-kind-interface"><a href="interfaces/Duration.html" class="tsd-kind-icon">Duration</a></li><li class="tsd-kind-interface"><a href="interfaces/Status.html" class="tsd-kind-icon">Status</a></li><li class="tsd-kind-interface"><a href="interfaces/SwarmInfo.html" class="tsd-kind-icon">Swarm<wbr/>Info</a></li><li class="tsd-kind-type-alias"><a href="modules.html#RecordHint" class="tsd-kind-icon">Record<wbr/>Hint</a></li><li class="tsd-kind-function"><a href="modules.html#setPasswordClearInterval" class="tsd-kind-icon">set<wbr/>Password<wbr/>Clear<wbr/>Interval</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li><li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li><li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
