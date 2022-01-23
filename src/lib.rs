@@ -299,7 +299,7 @@ pub enum ProcResultDto {
 }
 
 #[tauri::command]
-async fn init(snapshot_path: PathBuf, password: String) -> Result<()> {
+pub async fn init(snapshot_path: PathBuf, password: String) -> Result<()> {
     let api = Api::new(snapshot_path.clone());
     api_instances()
         .lock()
@@ -312,12 +312,12 @@ async fn init(snapshot_path: PathBuf, password: String) -> Result<()> {
 }
 
 #[tauri::command]
-async fn set_password_clear_interval(interval: Duration) {
+pub async fn set_password_clear_interval(interval: Duration) {
     stronghold::set_password_clear_interval(interval).await;
 }
 
 #[tauri::command]
-async fn destroy(snapshot_path: PathBuf) -> Result<()> {
+pub async fn destroy(snapshot_path: PathBuf) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.unload(true).await?;
@@ -325,7 +325,7 @@ async fn destroy(snapshot_path: PathBuf) -> Result<()> {
 }
 
 #[tauri::command]
-async fn save_snapshot(snapshot_path: PathBuf) -> Result<()> {
+pub async fn save_snapshot(snapshot_path: PathBuf) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.save().await?;
@@ -333,7 +333,7 @@ async fn save_snapshot(snapshot_path: PathBuf) -> Result<()> {
 }
 
 #[tauri::command]
-async fn get_status(snapshot_path: PathBuf) -> Result<Status> {
+pub async fn get_status(snapshot_path: PathBuf) -> Result<Status> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     let status = api.get_status().await;
@@ -341,7 +341,7 @@ async fn get_status(snapshot_path: PathBuf) -> Result<Status> {
 }
 
 #[tauri::command]
-async fn get_store_record(
+pub async fn get_store_record(
     snapshot_path: PathBuf,
     vault: VaultDto,
     location: LocationDto,
@@ -354,7 +354,7 @@ async fn get_store_record(
 }
 
 #[tauri::command]
-async fn save_record(
+pub async fn save_record(
     snapshot_path: PathBuf,
     vault: VaultDto,
     location: LocationDto,
@@ -377,7 +377,7 @@ async fn save_record(
 }
 
 #[tauri::command]
-async fn remove_record(
+pub async fn remove_record(
     snapshot_path: PathBuf,
     vault: VaultDto,
     location: LocationDto,
@@ -391,7 +391,7 @@ async fn remove_record(
 }
 
 #[tauri::command]
-async fn save_store_record(
+pub async fn save_store_record(
     snapshot_path: PathBuf,
     vault: VaultDto,
     location: LocationDto,
@@ -406,7 +406,7 @@ async fn save_store_record(
 }
 
 #[tauri::command]
-async fn remove_store_record(
+pub async fn remove_store_record(
     snapshot_path: PathBuf,
     vault: VaultDto,
     location: LocationDto,
@@ -456,7 +456,7 @@ fn map_result(result: ProcResult) -> Result<ProcResultDto> {
 }
 
 #[tauri::command]
-async fn execute_procedure(
+pub async fn execute_procedure(
     snapshot_path: PathBuf,
     vault: VaultDto,
     procedure: ProcedureDto,
@@ -469,35 +469,35 @@ async fn execute_procedure(
 }
 
 #[tauri::command]
-async fn spawn_communication(snapshot_path: PathBuf) -> Result<()> {
+pub async fn spawn_communication(snapshot_path: PathBuf) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.spawn_communication().await
 }
 
 #[tauri::command]
-async fn stop_communication(snapshot_path: PathBuf) -> Result<()> {
+pub async fn stop_communication(snapshot_path: PathBuf) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.stop_communication().await
 }
 
 #[tauri::command]
-async fn start_listening(snapshot_path: PathBuf, addr: Option<Multiaddr>) -> Result<Multiaddr> {
+pub async fn start_listening(snapshot_path: PathBuf, addr: Option<Multiaddr>) -> Result<Multiaddr> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.start_listening(addr).await
 }
 
 #[tauri::command]
-async fn get_swarm_info(snapshot_path: PathBuf) -> Result<SwarmInfoDto> {
+pub async fn get_swarm_info(snapshot_path: PathBuf) -> Result<SwarmInfoDto> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.get_swarm_info().await.map(Into::into)
 }
 
 #[tauri::command]
-async fn add_peer(
+pub async fn add_peer(
     snapshot_path: PathBuf,
     peer_id: String,
     addr: Option<Multiaddr>,
@@ -515,7 +515,7 @@ async fn add_peer(
 }
 
 #[tauri::command]
-async fn change_relay_direction(
+pub async fn change_relay_direction(
     snapshot_path: PathBuf,
     peer_id: String,
     relay_direction: RelayDirectionDto,
@@ -531,7 +531,7 @@ async fn change_relay_direction(
 }
 
 #[tauri::command]
-async fn remove_relay(snapshot_path: PathBuf, peer_id: String) -> Result<()> {
+pub async fn remove_relay(snapshot_path: PathBuf, peer_id: String) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     api.remove_relay(
@@ -541,7 +541,7 @@ async fn remove_relay(snapshot_path: PathBuf, peer_id: String) -> Result<()> {
 }
 
 #[tauri::command]
-async fn allow_all_requests(
+pub async fn allow_all_requests(
     snapshot_path: PathBuf,
     peers: Vec<String>,
     set_default: bool,
@@ -558,7 +558,7 @@ async fn allow_all_requests(
 }
 
 #[tauri::command]
-async fn reject_all_requests(
+pub async fn reject_all_requests(
     snapshot_path: PathBuf,
     peers: Vec<String>,
     set_default: bool,
@@ -575,7 +575,7 @@ async fn reject_all_requests(
 }
 
 #[tauri::command]
-async fn allow_requests(
+pub async fn allow_requests(
     snapshot_path: PathBuf,
     peers: Vec<String>,
     change_default: bool,
@@ -598,7 +598,7 @@ async fn allow_requests(
 }
 
 #[tauri::command]
-async fn reject_requests(
+pub async fn reject_requests(
     snapshot_path: PathBuf,
     peers: Vec<String>,
     change_default: bool,
@@ -621,7 +621,7 @@ async fn reject_requests(
 }
 
 #[tauri::command]
-async fn remove_firewall_rules(snapshot_path: PathBuf, peers: Vec<String>) -> Result<()> {
+pub async fn remove_firewall_rules(snapshot_path: PathBuf, peers: Vec<String>) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
     let mut parsed_peers = Vec::new();
@@ -634,7 +634,7 @@ async fn remove_firewall_rules(snapshot_path: PathBuf, peers: Vec<String>) -> Re
 }
 
 #[tauri::command]
-async fn get_remote_store_record(
+pub async fn get_remote_store_record(
     snapshot_path: PathBuf,
     peer_id: String,
     location: LocationDto,
@@ -649,7 +649,7 @@ async fn get_remote_store_record(
 }
 
 #[tauri::command]
-async fn save_remote_store_record(
+pub async fn save_remote_store_record(
     snapshot_path: PathBuf,
     peer_id: String,
     location: LocationDto,
@@ -666,7 +666,7 @@ async fn save_remote_store_record(
 }
 
 #[tauri::command]
-async fn execute_remote_procedure(
+pub async fn execute_remote_procedure(
     snapshot_path: PathBuf,
     peer_id: String,
     procedure: ProcedureDto,
