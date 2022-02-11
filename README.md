@@ -1,7 +1,9 @@
 # Tauri Plugin Stronghold
 ![Test](https://github.com/tauri-apps/tauri-plugin-stronghold/workflows/Test/badge.svg)
 
-This plugin provides a "classical" Tauri Plugin Interface to the [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) encrypted database, secure runtime, and peer-to-peer service.
+This plugin provides a "fully featured" Tauri Plugin Interface to the [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) encrypted database, secure runtime, and peer-to-peer service.
+
+By "fully-featured", we mean that this plugin provides a full API interface for JS to all exposed functionality of the rust library that it is consuming and also makes this API available within rust.
 
 ## Architecture
 This repo shape might appear to be strange, but it is really just a hybrid Rust / Typescript project that recommends a specific type of consumption, namely using GIT as the secure distribution mechanism, and referencing specific unforgeable git hashes. Of course, it can also be consumed via Cargo and NPM.
