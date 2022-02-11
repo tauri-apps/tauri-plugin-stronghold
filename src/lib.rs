@@ -727,7 +727,7 @@ fn password_to_key(password: &str) -> Vec<u8> {
     key.to_vec()
 }
 
-#[derive(Serialize)]
+#[derive(Serialise, Clone)]
 struct StatusChangeEvent<'a> {
     #[serde(rename = "snapshotPath")]
     snapshot_path: PathBuf,
