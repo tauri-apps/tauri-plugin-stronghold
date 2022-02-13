@@ -762,7 +762,7 @@ impl Api {
 // check if the snapshot path is different than the current loaded one
 // if it is, write the current snapshot and load the new one
 async fn check_snapshot(
-    mut runtime: &mut ActorRuntime,
+    runtime: &mut ActorRuntime,
     snapshot_path: &Path,
     password: Option<Arc<Password>>,
 ) -> Result<()> {
@@ -777,7 +777,7 @@ async fn check_snapshot(
         // if the current loaded snapshot is different than the snapshot we're tring to use,
         // save the current snapshot and clear the cache
         if curr_snapshot_path != snapshot_path {
-            switch_snapshot(&mut runtime, snapshot_path).await?;
+            switch_snapshot(runtime, snapshot_path).await?;
         }
         if snapshot_path.exists() {
             if let Some(client_path) = runtime.loaded_client_paths.iter().next() {
@@ -832,7 +832,7 @@ async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -
         .as_ref()
     {
         if persist && !runtime.spawned_client_paths.is_empty() {
-            save_snapshot(&mut runtime, curr_snapshot_path).await?;
+            save_snapshot(runtime, curr_snapshot_path).await?;
         }
         for path in &runtime.spawned_client_paths {
             stronghold_response_to_result(
@@ -854,8 +854,8 @@ async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -
     Ok(())
 }
 
-async fn switch_snapshot(mut runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
-    clear_stronghold_cache(&mut runtime, true).await?;
+async fn switch_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
+    clear_stronghold_cache(runtime, true).await?;
 
     CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
