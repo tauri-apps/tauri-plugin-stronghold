@@ -465,7 +465,7 @@ async fn execute_procedure(
     let api = api_instances.get(&snapshot_path).unwrap();
     let vault = api.get_vault(vault.name, array_into(vault.flags));
     let result = vault.execute_procedure(procedure.into()).await?;
-    Ok(map_result(result)?)
+    map_result(result)
 }
 
 #[tauri::command]
@@ -677,7 +677,7 @@ async fn execute_remote_procedure(
         PeerId::from_str(&peer_id).map_err(|e| stronghold::Error::InvalidPeer(Box::new(e)))?,
     );
     let result = vault.execute_procedure(procedure.into()).await?;
-    Ok(map_result(result)?)
+    map_result(result)
 }
 
 pub struct TauriStronghold<R: Runtime> {
@@ -727,7 +727,7 @@ fn password_to_key(password: &str) -> Vec<u8> {
     key.to_vec()
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct StatusChangeEvent<'a> {
     #[serde(rename = "snapshotPath")]
     snapshot_path: PathBuf,
