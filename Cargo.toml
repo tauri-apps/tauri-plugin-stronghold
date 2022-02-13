@@ -8,7 +8,6 @@ edition = "2018"
 exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 
 [dependencies]
-tauri = "1.0.0-beta.8"
 thiserror = "1.0"
 iota_stronghold = { version = "0.4.1", features = ["communication"] }
 stronghold_engine = "0.4"
@@ -21,6 +20,7 @@ async-std = { version = "1.10", features = ["attributes"] }
 slog = "2.7"
 hex = "0.4"
 zeroize = { version = "1.4", features = ["zeroize_derive"] }
+tauri = "1.0.0-rc.1"
 
 [patch.crates-io]
 aesni = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
@@ -29,3 +29,5 @@ aes-soft = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dad
 [dev-dependencies]
 rand = "0.8"
 rusty-fork = "0.3"
+
+[features]

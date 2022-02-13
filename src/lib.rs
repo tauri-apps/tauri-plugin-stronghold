@@ -744,7 +744,7 @@ impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
             move |snapshot_path, status| {
                 let _ = window.emit(
                     "stronghold://status-change",
-                    Some(StatusChangeEvent {
+                    &Some(StatusChangeEvent {
                         snapshot_path: snapshot_path.to_path_buf(),
                         status,
                     }),
