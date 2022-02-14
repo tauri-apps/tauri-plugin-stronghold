@@ -8,7 +8,7 @@ edition = "2018"
 exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 
 [dependencies]
-tauri = "1.0.0-rc.1"
+tauri = "1.0.0-rc.2"
 thiserror = "1.0"
 iota_stronghold = { version = "0.4.1", features = ["communication"] }
 stronghold_engine = "0.4"
