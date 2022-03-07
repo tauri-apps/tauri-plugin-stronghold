@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { listen } from '@tauri-apps/api/event'
 
 export interface Duration {
-  millis: number
+  secs: number
   nanos: number
 }
 

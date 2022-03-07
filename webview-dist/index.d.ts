@@ -1,5 +1,5 @@
 export interface Duration {
-    millis: number;
+    secs: number;
     nanos: number;
 }
 export interface Status {
