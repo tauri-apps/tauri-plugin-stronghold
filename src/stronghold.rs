@@ -220,9 +220,6 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
 
                 let sleep_duration = interval.max(MINIMUM_PASSWORD_CLEAR_INTERVAL);
 
-                println!("interval: {:?}", interval.as_nanos());
-                println!("sleep_duration: {:?}", sleep_duration);
-
                 sleep(sleep_duration).await;
 
                 if interval.as_nanos() == 0 {
