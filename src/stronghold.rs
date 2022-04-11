@@ -33,6 +33,7 @@ static CURRENT_SNAPSHOT_PATH: OnceCell<Arc<Mutex<Option<PathBuf>>>> = OnceCell::
 static PASSWORD_CLEAR_INTERVAL: OnceCell<Arc<Mutex<Duration>>> = OnceCell::new();
 
 const DEFAULT_PASSWORD_CLEAR_INTERVAL: Duration = Duration::from_millis(0);
+const MINIMUM_PASSWORD_CLEAR_INTERVAL: Duration = Duration::from_secs(1);
 
 struct StatusChangeEventHandler {
     on_event: Box<dyn FnMut(&Path, &Status) + Send>,
@@ -195,11 +196,16 @@ async fn on_stronghold_access<S: AsRef<Path>>(snapshot_path: S) -> Result<()> {
 
 /// Set the password clear interval.
 /// If the stronghold isn't used after `interval`, the password is cleared and must be set again.
-pub async fn set_password_clear_interval(interval: Duration) {
+pub async fn set_password_clear_interval(mut interval: Duration) {
     let mut clear_interval = PASSWORD_CLEAR_INTERVAL
         .get_or_init(|| Arc::new(Mutex::new(DEFAULT_PASSWORD_CLEAR_INTERVAL)))
         .lock()
         .await;
+
+    if !interval.is_zero() {
+        interval = interval.max(MINIMUM_PASSWORD_CLEAR_INTERVAL);
+    }
+
     *clear_interval = interval;
 }
 
@@ -211,7 +217,13 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
                     .get_or_init(|| Arc::new(Mutex::new(DEFAULT_PASSWORD_CLEAR_INTERVAL)))
                     .lock()
                     .await;
-                sleep(interval).await;
+
+                let sleep_duration = interval.max(MINIMUM_PASSWORD_CLEAR_INTERVAL);
+
+                println!("interval: {:?}", interval.as_nanos());
+                println!("sleep_duration: {:?}", sleep_duration);
+
+                sleep(sleep_duration).await;
 
                 if interval.as_nanos() == 0 {
                     continue;
