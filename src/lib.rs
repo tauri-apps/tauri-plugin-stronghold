@@ -1,7 +1,5 @@
 use crypto::keys::slip10::Chain;
-pub use iota_stronghold::{
-    Location
-};
+pub use iota_stronghold::Location;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Runtime, Window};
