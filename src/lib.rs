@@ -1,9 +1,7 @@
 use crypto::keys::slip10::Chain;
 pub use iota_stronghold::{
-    Location, Multiaddr, PeerId, ProcResult, Procedure, RecordHint, SLIP10DeriveInput,
-    StrongholdFlags, VaultFlags,
+    Location, RecordHint,
 };
-use iota_stronghold::{RelayDirection, SHRequestPermission};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Runtime, Window};
