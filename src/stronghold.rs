@@ -493,7 +493,6 @@ impl Api {
         Store {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
-            flags,
         }
     }
 
