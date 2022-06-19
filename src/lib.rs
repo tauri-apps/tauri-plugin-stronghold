@@ -1,6 +1,6 @@
 use crypto::keys::slip10::Chain;
 pub use iota_stronghold::{
-    Location, RecordHint,
+    Location, RecordHint
 };
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
