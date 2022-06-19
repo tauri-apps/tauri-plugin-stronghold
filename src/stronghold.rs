@@ -886,7 +886,7 @@ mod tests {
 
                 std::thread::sleep(Duration::from_millis(interval * 3));
 
-                let store = api.get_store("", vec![]);
+                let store = api.get_store("");
                 let res = store.get_record(get_location("passwordexpires")).await;
                 assert!(res.is_err());
                 let error = res.unwrap_err();
@@ -918,7 +918,7 @@ mod tests {
 
                 let api = super::Api::new(&snapshot_path);
                 api.load([0; 32].to_vec()).await.unwrap();
-                let store = api.get_store("", vec![]);
+                let store = api.get_store("");
 
                 for i in 1..6 {
                     let instant = std::time::Instant::now();
@@ -976,7 +976,7 @@ mod tests {
 
         let api = super::Api::new(&snapshot_path);
         api.load([0; 32].to_vec()).await.unwrap();
-        let store = api.get_store("", vec![]);
+        let store = api.get_store("");
 
         let id = "writeandreadtest".to_string();
         let data = "account data";
@@ -1001,7 +1001,7 @@ mod tests {
 
         let api = super::Api::new(&snapshot_path);
         api.load([0; 32].to_vec()).await.unwrap();
-        let store = api.get_store("", vec![]);
+        let store = api.get_store("");
 
         let id = "writeanddeleteid".to_string();
         let data = "account data";
@@ -1029,7 +1029,7 @@ mod tests {
 
             let api = super::Api::new(&snapshot_path);
             api.load([0; 32].to_vec()).await.unwrap();
-            let store = api.get_store("", vec![]);
+            let store = api.get_store("");
 
             let id = format!("multiplesnapshots{}", i);
             let data: String = std::iter::repeat(())
@@ -1046,7 +1046,7 @@ mod tests {
         for (snapshot_path, account_id, data) in snapshot_saves {
             let api = super::Api::new(&snapshot_path);
             api.load([0; 32].to_vec()).await.unwrap();
-            let store = api.get_store("", vec![]);
+            let store = api.get_store("");
             let stored_data = store.get_record(get_location(&account_id)).await?;
             assert_eq!(stored_data, data);
         }
