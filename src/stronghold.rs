@@ -299,7 +299,7 @@ impl Store {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         let (data, status) = runtime.stronghold.read_from_store(location).await;
         stronghold_response_to_result(status).map_err(|_| Error::RecordNotFound)?;
@@ -316,7 +316,7 @@ impl Store {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         stronghold_response_to_result(
             runtime
@@ -333,7 +333,7 @@ impl Store {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         stronghold_response_to_result(runtime.stronghold.delete_from_store(location).await)?;
 
@@ -357,12 +357,12 @@ impl Vault {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         stronghold_response_to_result(
             runtime
                 .stronghold
-                .write_to_vault(location, record.as_bytes().to_vec(), hint, flags)
+                .write_to_vault(location, record.as_bytes().to_vec(), hint)
                 .await,
         )?;
 
@@ -374,7 +374,7 @@ impl Vault {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         stronghold_response_to_result(runtime.stronghold.delete_data(location, gc).await)?;
 
@@ -385,7 +385,7 @@ impl Vault {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
 
-        load_actor(&mut runtime, &self.snapshot_path, &self.name, &self.flags).await?;
+        load_actor(&mut runtime, &self.snapshot_path, &self.name).await?;
 
         let result = runtime.stronghold.runtime_exec(procedure).await;
         Ok(result)
