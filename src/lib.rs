@@ -101,30 +101,6 @@ impl From<SHRequestPermissionDto> for SHRequestPermission {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(tag = "type", content = "payload")]
-enum StrongholdFlagDto {
-    IsReadable(bool),
-}
-
-impl From<StrongholdFlagDto> for StrongholdFlags {
-    fn from(dto: StrongholdFlagDto) -> StrongholdFlags {
-        match dto {
-            StrongholdFlagDto::IsReadable(flag) => StrongholdFlags::IsReadable(flag),
-        }
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "type", content = "payload")]
-enum VaultFlagsDto {}
-
-impl From<VaultFlagsDto> for VaultFlags {
-    fn from(_dto: VaultFlagsDto) -> VaultFlags {
-        unimplemented!()
-    }
-}
-
 fn array_into<R, T: Into<R>>(items: Vec<T>) -> Vec<R> {
     items.into_iter().map(|item| item.into()).collect()
 }
@@ -133,7 +109,6 @@ fn array_into<R, T: Into<R>>(items: Vec<T>) -> Vec<R> {
 struct VaultDto {
     name: String,
     #[serde(default)]
-    flags: Vec<StrongholdFlagDto>,
 }
 
 #[derive(Deserialize)]
@@ -345,7 +320,7 @@ async fn get_store_record(
 ) -> Result<String> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(vault.name);
     let record = store.get_record(location.into()).await?;
     Ok(record)
 }
@@ -357,17 +332,15 @@ async fn save_record(
     location: LocationDto,
     record: String,
     record_hint: Option<RecordHint>,
-    flags: Option<Vec<VaultFlagsDto>>,
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    let vault = api.get_vault(vault.name);
     vault
         .save_record(
             location.into(),
             record,
             record_hint.unwrap_or_else(default_record_hint),
-            array_into(flags.unwrap_or_default()),
         )
         .await?;
     Ok(())
@@ -382,7 +355,7 @@ async fn remove_record(
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    let vault = api.get_vault(vault.name);
     vault.remove_record(location.into(), gc).await?;
     Ok(())
 }
@@ -397,7 +370,7 @@ async fn save_store_record(
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(vault.name);
     store.save_record(location.into(), record, lifetime).await?;
     Ok(())
 }
@@ -410,7 +383,7 @@ async fn remove_store_record(
 ) -> Result<()> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let store = api.get_store(vault.name, array_into(vault.flags));
+    let store = api.get_store(vault.name);
     store.remove_record(location.into()).await?;
     Ok(())
 }
@@ -460,7 +433,7 @@ async fn execute_procedure(
 ) -> Result<ProcResultDto> {
     let api_instances = api_instances().lock().await;
     let api = api_instances.get(&snapshot_path).unwrap();
-    let vault = api.get_vault(vault.name, array_into(vault.flags));
+    let vault = api.get_vault(vault.name);
     let result = vault.execute_procedure(procedure.into()).await?;
     map_result(result)
 }
