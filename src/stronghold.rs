@@ -4,10 +4,8 @@ use async_std::{
 };
 pub use engine::vault::RecordId;
 pub use iota_stronghold::{
-    Location, Multiaddr, PeerId, ProcResult, Procedure, RecordHint, ResultMessage, Stronghold,
-    StrongholdFlags, VaultFlags,
+    Location
 };
-use iota_stronghold::{RelayDirection, SHRequestPermission};
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
 use serde::{ser::Serializer, Serialize};
