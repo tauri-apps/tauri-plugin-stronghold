@@ -10,7 +10,6 @@ use std::{
     collections::HashMap,
     convert::{Into, TryInto},
     path::PathBuf,
-    str::FromStr,
     sync::Arc,
     time::Duration,
 };
