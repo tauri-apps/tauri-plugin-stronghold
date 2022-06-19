@@ -12,6 +12,7 @@ tauri = "1.0.0"
 thiserror = "1.0"
 iota_stronghold = "0.6.0"
 stronghold_engine = "0.5.2"
+stronghold-p2p = "0.4.1"
 iota-crypto = { version = "0.12.1", features = ["hmac", "sha", "pbkdf", "slip10"] }
 riker = { version = "0.4" }
 once_cell = "1.8"
