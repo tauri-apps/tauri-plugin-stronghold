@@ -352,8 +352,7 @@ impl Vault {
         &self,
         location: Location,
         record: String,
-        hint: RecordHint,
-        flags: Vec<VaultFlags>,
+        hint: RecordHint
     ) -> Result<()> {
         let mut runtime = actor_runtime().lock().await;
         check_snapshot(&mut runtime, &self.snapshot_path, None).await?;
