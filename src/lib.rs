@@ -106,12 +106,6 @@ fn array_into<R, T: Into<R>>(items: Vec<T>) -> Vec<R> {
 }
 
 #[derive(Deserialize)]
-struct VaultDto {
-    name: String,
-    #[serde(default)]
-}
-
-#[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum LocationDto {
     Generic { vault: String, record: String },
