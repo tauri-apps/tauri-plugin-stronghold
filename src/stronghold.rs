@@ -124,7 +124,6 @@ async fn load_actor(
     runtime: &mut ActorRuntime,
     snapshot_path: &Path,
     client_path: &[u8],
-    flags: &[StrongholdFlags],
 ) -> Result<()> {
     on_stronghold_access(&snapshot_path).await?;
 
@@ -141,12 +140,6 @@ async fn load_actor(
                 .stronghold
                 .spawn_stronghold_actor(
                     client_path.to_vec(),
-                    flags
-                        .iter()
-                        .map(|flag| match flag {
-                            StrongholdFlags::IsReadable(flag) => StrongholdFlags::IsReadable(*flag),
-                        })
-                        .collect(),
                 )
                 .await,
         )?;
@@ -298,7 +291,6 @@ pub struct Status {
 pub struct Store {
     snapshot_path: PathBuf,
     name: Vec<u8>,
-    flags: Vec<StrongholdFlags>,
 }
 
 impl Store {
@@ -352,7 +344,6 @@ impl Store {
 pub struct Vault {
     snapshot_path: PathBuf,
     name: Vec<u8>,
-    flags: Vec<StrongholdFlags>,
 }
 
 impl Vault {
@@ -490,7 +481,7 @@ impl Api {
         }
     }
 
-    pub fn get_vault<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Vault {
+    pub fn get_vault<S: AsRef<str>>(&self, name: S) -> Vault {
         Vault {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
@@ -498,7 +489,7 @@ impl Api {
         }
     }
 
-    pub fn get_store<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Store {
+    pub fn get_store<S: AsRef<str>>(&self, name: S) -> Store {
         Store {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
