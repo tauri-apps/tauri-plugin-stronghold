@@ -276,35 +276,35 @@ async fn remove_store_record(
 
 fn map_result(result: ProcResult) -> Result<ProcResultDto> {
     let r = match result {
-        ProcResult::SLIP10Generate(status) => {
+        SLIP10Generate(status) => {
             stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::SLIP10Generate
         }
-        ProcResult::SLIP10Derive(status) => {
+        SLIP10Derive(status) => {
             let chain_code = stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::SLIP10Derive(hex::encode(chain_code))
         }
-        ProcResult::BIP39Recover(status) => {
+        BIP39Recover(status) => {
             stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::BIP39Recover
         }
-        ProcResult::BIP39Generate(status) => {
+        BIP39Generate(status) => {
             stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::BIP39Generate
         }
-        ProcResult::BIP39MnemonicSentence(status) => {
+        BIP39MnemonicSentence(status) => {
             let sentence = stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::BIP39MnemonicSentence(sentence)
         }
-        ProcResult::Ed25519PublicKey(status) => {
+        Ed25519PublicKey(status) => {
             let public_key = stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::Ed25519PublicKey(hex::encode(public_key))
         }
-        ProcResult::Ed25519Sign(status) => {
+        Ed25519Sign(status) => {
             let signature = stronghold::stronghold_response_to_result(status)?;
             ProcResultDto::Ed25519Sign(hex::encode(signature))
         }
-        ProcResult::Error(e) => {
+        Error(e) => {
             return Err(stronghold::Error::FailedToPerformAction(e));
         }
     };
