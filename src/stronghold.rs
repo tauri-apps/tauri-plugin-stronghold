@@ -12,6 +12,7 @@ use stronghold::{
     Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
 };
 use p2p::{Multiaddr, PeerId};
+use engine::vault::RecordHint;
 
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
