@@ -6,6 +6,8 @@ pub use engine::vault::RecordId;
 pub use iota_stronghold::{
     Location
 };
+use p2p::{Multiaddr, PeerId};
+
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
 use serde::{ser::Serializer, Serialize};
