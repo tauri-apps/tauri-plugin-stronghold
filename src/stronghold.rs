@@ -3,8 +3,13 @@ use async_std::{
     task::{sleep, spawn},
 };
 pub use engine::vault::RecordId;
-pub use iota_stronghold::{
-    Location
+use iota_stronghold as stronghold;
+use stronghold::{
+    procedures::{
+        BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
+        StrongholdProcedure,
+    },
+    Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
 };
 use p2p::{Multiaddr, PeerId};
 
