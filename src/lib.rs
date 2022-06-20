@@ -13,7 +13,7 @@ use std::{
 };
 
 /// The stronghold interface.
-use stronghold::{
+use iota_stronghold::{
     procedures::{
         BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
         StrongholdProcedure,
