@@ -19,6 +19,7 @@ use stronghold::{
         StrongholdProcedure,
     },
 };
+use engine::vault::RecordHint;
 pub mod stronghold;
 use stronghold::{Api, Status, SwarmInfo};
 use p2p::{Multiaddr, PeerId};
