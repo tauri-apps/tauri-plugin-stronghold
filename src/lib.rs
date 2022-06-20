@@ -13,6 +13,12 @@ use std::{
 };
 
 /// The stronghold interface.
+use stronghold::{
+    procedures::{
+        BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
+        StrongholdProcedure,
+    },
+};
 pub mod stronghold;
 use stronghold::{Api, Status, SwarmInfo};
 use p2p::{Multiaddr, PeerId};
