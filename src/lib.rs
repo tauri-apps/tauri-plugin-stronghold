@@ -15,6 +15,7 @@ use std::{
 /// The stronghold interface.
 pub mod stronghold;
 use stronghold::{Api, Status, SwarmInfo};
+use p2p::{Multiaddr, PeerId};
 
 type Result<T> = std::result::Result<T, stronghold::Error>;
 
