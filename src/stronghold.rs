@@ -12,7 +12,8 @@ use stronghold::{
     Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
 };
 use p2p::{Multiaddr, PeerId};
-use engine::vault::RecordHint;
+use engine::vault::{RecordHint, Snapshot;
+
 
 use once_cell::sync::{Lazy, OnceCell};
 use riker::actors::*;
@@ -306,6 +307,11 @@ async fn switch_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Re
         .replace(snapshot_path.to_path_buf());
 
     Ok(())
+}
+
+//Create new Snapshot
+pub fn new (name: Option<&str>) {
+    Snapshot::get_path(name);
 }
 
 #[cfg(test)]
