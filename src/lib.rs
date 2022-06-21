@@ -1,7 +1,6 @@
 pub use iota_stronghold::Location;
-use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
-use tauri::{async_runtime::Mutex, plugin::Plugin, Invoke, Runtime, Window};
+use serde::{Serialize};
+use tauri::{plugin::Plugin, Invoke, Runtime};
 
 use std::{
     collections::HashMap,
@@ -59,21 +58,6 @@ impl<R: Runtime> Default for TauriStronghold<R> {
             ]),
         }
     }
-}
-
-fn password_to_key(password: &str) -> Vec<u8> {
-    let mut dk = [0; 64];
-    // safe to unwrap (rounds > 0)
-    crypto::keys::pbkdf::PBKDF2_HMAC_SHA512(password.as_bytes(), b"tauri", 100, &mut dk).unwrap();
-    let key: [u8; 32] = dk[0..32][..].try_into().unwrap();
-    key.to_vec()
-}
-
-#[derive(Serialize, Clone)]
-struct StatusChangeEvent<'a> {
-    #[serde(rename = "snapshotPath")]
-    snapshot_path: PathBuf,
-    status: &'a stronghold::Status,
 }
 
 impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
