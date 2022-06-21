@@ -35,11 +35,6 @@ fn default_record_hint() -> RecordHint {
     RecordHint::new([0; 24]).unwrap()
 }
 
-#[tauri::command]
-async fn set_password_clear_interval(interval: Duration) {
-    stronghold::set_password_clear_interval(interval).await;
-}
-
 pub struct TauriStronghold<R: Runtime> {
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
 }
@@ -97,20 +92,6 @@ struct StatusChangeEvent<'a> {
 impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
     fn name(&self) -> &'static str {
         "stronghold"
-    }
-
-    fn created(&mut self, window: Window<R>) {
-        tauri::async_runtime::block_on(stronghold::on_status_change(
-            move |snapshot_path, status| {
-                let _ = window.emit(
-                    "stronghold://status-change",
-                    Some(StatusChangeEvent {
-                        snapshot_path: snapshot_path.to_path_buf(),
-                        status,
-                    }),
-                );
-            },
-        ))
     }
 
     fn extend_api(&mut self, invoke: Invoke<R>) {
