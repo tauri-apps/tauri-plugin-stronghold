@@ -29,32 +29,6 @@ impl<R: Runtime> Default for TauriStronghold<R> {
     fn default() -> Self {
         Self {
             invoke_handler: Box::new(tauri::generate_handler![
-                init,
-                set_password_clear_interval,
-                destroy,
-                save_snapshot,
-                get_status,
-                get_store_record,
-                save_record,
-                remove_record,
-                save_store_record,
-                remove_store_record,
-                execute_procedure,
-                spawn_communication,
-                stop_communication,
-                start_listening,
-                get_swarm_info,
-                add_peer,
-                change_relay_direction,
-                remove_relay,
-                allow_all_requests,
-                reject_all_requests,
-                allow_requests,
-                reject_requests,
-                remove_firewall_rules,
-                get_remote_store_record,
-                save_remote_store_record,
-                execute_remote_procedure
             ]),
         }
     }
