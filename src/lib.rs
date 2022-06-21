@@ -22,19 +22,6 @@ use engine::vault::RecordHint;
 pub mod stronghold;
 use p2p::{Multiaddr, PeerId};
 
-fn array_into<R, T: Into<R>>(items: Vec<T>) -> Vec<R> {
-    items.into_iter().map(|item| item.into()).collect()
-}
-
-#[derive(Deserialize)]
-struct VaultDto {
-    name: String,
-}
-
-fn default_record_hint() -> RecordHint {
-    RecordHint::new([0; 24]).unwrap()
-}
-
 pub struct TauriStronghold<R: Runtime> {
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
 }
