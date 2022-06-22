@@ -103,6 +103,6 @@ async fn read_from_store(key: String) -> Result<String> {
     let client = Client::default();
     let store = client.store();
     
-    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().to_string());
+    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().unwrap().to_string());
     
 }
