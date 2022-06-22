@@ -99,7 +99,7 @@ async fn write_from_store(key: String, value: String) -> Result<(), ClientError>
     Ok(())
 }
 
-async fn command_read_from_store(key: String) -> Result<String> {
+async fn read_from_store(key: String) -> Result<String> {
     let client = Client::default();
     let store = client.store();
     
