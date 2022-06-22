@@ -1,4 +1,4 @@
-use crypto::hashes::{blake2b::Blake2b256, Digest};
+use crypto::hashes::{blake2b::Blake2b256};
 use iota_stronghold as stronghold;
 use stronghold::{
     procedures::{
