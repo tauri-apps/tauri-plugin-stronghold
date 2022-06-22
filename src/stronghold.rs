@@ -105,5 +105,5 @@ async fn read_from_store(key: String) -> String {
     
     let record = store.get(key.as_bytes()).unwrap() ;
     
-    return String::from_utf8(record.to_string());
+    return String::from_utf8(record.unwrap().to_string());
 }
