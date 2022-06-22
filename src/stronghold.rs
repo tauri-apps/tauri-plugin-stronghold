@@ -9,6 +9,7 @@ use stronghold::{
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold,
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
+use utils::provider::Provider;
 
 #[derive(Debug)]
 pub struct VaultLocation {
