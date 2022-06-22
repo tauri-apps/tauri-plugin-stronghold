@@ -32,7 +32,7 @@ impl VaultLocation {
     }
 }
 
-fn create_snapshot(path: String, client_path: String, output: VaultLocation, key: String) {
+async fn create_snapshot(path: String, client_path: String, output: VaultLocation, key: String) {
     let stronghold = Stronghold::default();
 
     let client_path = client_path.as_bytes().to_vec();
@@ -55,4 +55,29 @@ fn create_snapshot(path: String, client_path: String, output: VaultLocation, key
     stronghold
         .write_client(client_path)
         .expect("Store client state into snapshot state failed");
+}
+
+async fn read_snapshot(path: String, client_path: String, key: String, private_key_location: VaultLocation) {
+    let stronghold = Stronghold::default();
+    let client_path = client_path.as_bytes().to_vec();
+    let snapshot_path = SnapshotPath::from_path(path);
+
+    // calculate hash from key
+    let key = hash_blake2b(key);
+    let keyprovider = KeyProvider::try_from(key).expect("Failed to load key");
+
+    let client = stronghold
+        .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)
+        .expect("Could not load client from Snapshot");
+
+    // get the public key
+    let public_key_procedure = stronghold::procedures::PublicKey {
+        ty: KeyType::Ed25519,
+        private_key: private_key_location.to_location(),
+    };
+
+    let procedure_result = client.execute_procedure(StrongholdProcedure::PublicKey(public_key_procedure));
+
+    let procedure_result = procedure_result.unwrap();
+    let output: Vec<u8> = procedure_result.into();
 }
