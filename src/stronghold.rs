@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::convert::{Try From, Infallible};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use iota_stronghold as stronghold;
 use stronghold::{
@@ -115,4 +115,10 @@ async fn init_vault() {
   let vid0 = VaultId::random::<Provider>().unwrap();
   
    view.init_vault(&key0, vid0);
+} 
+
+async fn get_vault_value() {
+  view.get_guard::<Infallible, _>(&key1, vid1, rid1, |g| {
+    Ok(())
+  })
 } 
