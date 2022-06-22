@@ -1,8 +1,3 @@
-use async_std::{
-    sync::Mutex,
-    task::{sleep, spawn},
-};
-
 use iota_stronghold as stronghold;
 use stronghold::{
     procedures::{
@@ -10,18 +5,6 @@ use stronghold::{
         StrongholdProcedure,
     },
     Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
-};
-
-use once_cell::sync::{OnceCell};
-use zeroize::Zeroize;
-
-use std::{
-    collections::{HashMap, HashSet},
-    ops::DerefMut,
-    path::{Path, PathBuf},
-    sync::Arc,
-    thread,
-    time::{Duration, Instant},
 };
 
 #[derive(Debug, Parser)]
