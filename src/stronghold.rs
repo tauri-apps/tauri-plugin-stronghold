@@ -3,7 +3,7 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use iota_stronghold as stronghold;
 use stronghold::{
     procedures::{
-        BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
+        GenerateKey, KeyType,
         StrongholdProcedure,
     },
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold,
