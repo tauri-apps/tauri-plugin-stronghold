@@ -10,12 +10,9 @@ use stronghold::{
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 
-#[derive(Debug, Parser)]
+#[derive(Debug)]
 pub struct VaultLocation {
-    #[clap(long, help = "The storage location inside the vault")]
     vault_path: String,
-
-    #[clap(long, help = "The storage location for a record inside a vault")]
     record_path: String,
 }
 
