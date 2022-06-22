@@ -33,6 +33,13 @@ impl VaultLocation {
     }
 }
 
+/// Calculates the Blake2b from a String
+fn hash_blake2b(input: String) -> Vec<u8> {
+    let mut hasher = Blake2b256::new();
+    hasher.update(input.as_bytes());
+    hasher.finalize().to_vec()
+}
+
 async fn create_snapshot(path: String, client_path: String, output: VaultLocation, key: String) {
     let stronghold = Stronghold::default();
 
@@ -90,4 +97,12 @@ async fn write_from_store(key: String, value: String) -> Result<(), ClientError>
     store.insert(key.as_bytes().to_vec(), value.as_bytes().to_vec(), None)?;
 
     Ok(())
+}
+
+async fn command_read_from_store(key: String) -> Result<String> {
+    let client = Client::default();
+    let store = client.store();
+    
+    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().to_string());
+    
 }
