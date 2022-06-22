@@ -82,3 +82,12 @@ async fn read_snapshot(path: String, client_path: String, key: String, private_k
     let procedure_result = procedure_result.unwrap();
     let output: Vec<u8> = procedure_result.into();
 }
+
+async fn write_from_store(key: String, value: String) -> Result<(), ClientError> {
+    let client = Client::default();
+    let store = client.store();
+
+    store.insert(key.as_bytes().to_vec(), value.as_bytes().to_vec(), None)?;
+
+    Ok(())
+}
