@@ -99,10 +99,10 @@ async fn write_from_store(key: String, value: String) -> Result<(), ClientError>
     Ok(())
 }
 
-async fn read_from_store(key: String) -> Result<String> {
+async fn read_from_store(key: String) -> Result<String, ClientError> {
     let client = Client::default();
     let store = client.store();
     
-    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().unwrap().to_string());
-    
+    let record = store.get(key.as_bytes()).unwrap()? ;
+    Ok(String::from_utf8(record.unwrap().to_string());
 }
