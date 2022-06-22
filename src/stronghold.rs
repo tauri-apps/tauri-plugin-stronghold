@@ -5,7 +5,7 @@ use stronghold::{
         BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
         StrongholdProcedure,
     },
-    Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold,
 };
 
 #[derive(Debug, Parser)]
