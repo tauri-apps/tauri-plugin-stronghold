@@ -8,6 +8,7 @@ use stronghold::{
     },
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold,
 };
+use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 
 #[derive(Debug, Parser)]
 pub struct VaultLocation {
@@ -108,3 +109,12 @@ async fn read_from_store(key: String) -> String {
     
     return String::from_utf8(record.unwrap()).unwrap();
 }
+
+async init_vault() {
+  let mut view: DbView<Provider> = DbView::new();
+
+  let key0 = Key::random();
+  let vid0 = VaultId::random::<Provider>().unwrap();
+  
+   view.init_vault(&key0, vid0);
+} 
