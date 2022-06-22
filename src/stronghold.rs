@@ -3,12 +3,13 @@ use async_std::{
     task::{sleep, spawn},
 };
 
-use engine::{
-    vault::RecordHint,
-    snapshot::{
-        files,
-        logic::*,
+use iota_stronghold as stronghold;
+use stronghold::{
+    procedures::{
+        BIP39Generate, Chain, GenerateKey, KeyType, MnemonicLanguage, Slip10Derive, Slip10DeriveInput, Slip10Generate,
+        StrongholdProcedure,
     },
+    Client, ClientError, ClientVault, KeyProvider, Location, SnapshotPath, Store, Stronghold,
 };
 
 use once_cell::sync::{OnceCell};
