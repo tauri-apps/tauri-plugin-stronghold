@@ -110,7 +110,7 @@ async fn read_from_store(key: String) -> String {
     return String::from_utf8(record.unwrap()).unwrap();
 }
 
-async init_vault() {
+async fn init_vault() {
   let mut view: DbView<Provider> = DbView::new();
 
   let key0 = Key::random();
