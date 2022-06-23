@@ -11,7 +11,8 @@ impl<R: Runtime> Default for TauriStronghold<R> {
     fn default() -> Self {
         Self {
             invoke_handler: Box::new(tauri::generate_handler![
-            ]),
+              save_record
+           ]),
         }
     }
 }
@@ -28,16 +29,6 @@ impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
 
 pub struct TauriStronghold<R: Runtime> {
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
-}
-
-impl<R: Runtime> Default for TauriStronghold<R> {
-    fn default() -> Self {
-        Self {
-            invoke_handler: Box::new(tauri::generate_handler![
-                save_record
-            ]),
-        }
-    }
 }
 
 #[tauri::command]
