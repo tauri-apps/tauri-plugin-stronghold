@@ -117,8 +117,14 @@ async fn init_vault() {
    view.init_vault(&key0, vid0);
 } 
 
-async fn get_vault_value() {
-  view.get_guard::<Infallible, _>(&key1, vid1, rid1, |g| {
+async fn get_vault_value(key: Key, vault: VaultId, record: RecordId) {
+  view.get_guard::<Infallible, _>(key, vault, record, |g| {
     Ok(())
   })
 } 
+
+async fn write_vault_value(key: Key, vault: VaultId, record: RecordId, data: String) {
+       // write to vault0 and record0
+    view.write(key, vault, record, data, RecordHint::new(b"hint").unwrap())
+        .unwrap();
+}
