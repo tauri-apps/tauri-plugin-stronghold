@@ -6,7 +6,7 @@ use stronghold::{
         GenerateKey, KeyType,
         StrongholdProcedure,
     },
-    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold,
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 use stronghold_utils::provider::Provider;
@@ -112,19 +112,19 @@ async fn init_vault() {
   let mut view: DbView<Provider> = DbView::new();
 
   let key = Key::random();
-  let vaulId = VaultId::random::<Provider>().unwrap();
+  let vaultId = VaultId::random::<Provider>().unwrap();
   
    view.init_vault(&key, vaultId);
 } 
 
-async fn get_vault_value(key: Key, vault: VaultId, record: RecordId) -> Result<String, VaultError> {
+async fn get_vault_value(key: Key<T>, vault: VaultId, record: RecordId) -> Result<String, VaultError> {
   view.get_guard::<Infallible, _>(key, vault, record, |g| {
       
     Ok(g)
   })
 } 
 
-async fn write_vault_value(key: Key, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
+async fn write_vault_value(key: Key<T>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
        // write to vault0 and record0
     view.write(key, vault, record, data, record_hint)?
 }
