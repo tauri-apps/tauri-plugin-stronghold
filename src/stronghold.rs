@@ -67,26 +67,9 @@ async fn create_snapshot(path: String, client_path: String, output: VaultLocatio
     let stronghold = Stronghold::default();
 
     let client_path = client_path.as_bytes().to_vec();
+    
 
-    let client = stronghold
-        .create_client(client_path.clone())
-        .expect("Cannot creat client");
-
-    let output_location = output.to_location();
-
-    let generate_key_procedure = GenerateKey {
-        ty: KeyType::Ed25519,
-        output: output_location,
-    };
-
-    client
-        .execute_procedure(generate_key_procedure)
-        .expect("Running procedure failed");
-
-    stronghold
-        .write_client(client_path)
-        .expect("Store client state into snapshot state failed");
-}
+    }
 
 async fn read_snapshot(path: String, client_path: String, key: String, private_key_location: VaultLocation) {
     let stronghold = Stronghold::default();
