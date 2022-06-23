@@ -123,7 +123,7 @@ async fn init_vault() {
    view.init_vault(&key, vaultId);
 }
 
-async fn get_vault_value(view, DbView, key: Key, vault: VaultId, record: RecordId) -> Result<String, VaultError> {
+async fn get_vault_value(view, DbView, key: Key, vault: VaultId, record: RecordId) -> Result<String, VaultError::Record> {
   view.get_guard::<Infallible, _>(key, vault, record, |g| {
       
     Ok(g)
