@@ -1,5 +1,10 @@
 use std::convert::{TryFrom, Infallible};
+use async_std::{
+    sync::Mutex,
+};
+use std::{sync::Arc};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
+use once_cell::sync::{OnceCell};
 use iota_stronghold as stronghold;
 use stronghold::{
     procedures::{
@@ -9,6 +14,8 @@ use stronghold::{
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
+
+static VAULT_ID: OnceCell<Arc<Mutex<VaultId>>> = OnceCell::new();
 
 #[derive(Debug)]
 pub struct VaultLocation {
