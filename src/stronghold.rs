@@ -46,6 +46,16 @@ impl VaultLocation {
     }
 }
 
+async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>> {
+    PASSWORD_STORE
+        .get_or_init(default_password_store)
+        .lock()
+        .await
+        .get(snapshot_path)
+        .cloned()
+        .ok_or(Error::PasswordNotSet)
+}
+
 /// Calculates the Blake2b from a String
 fn hash_blake2b(input: String) -> Vec<u8> {
     let mut hasher = Blake2b256::new();
