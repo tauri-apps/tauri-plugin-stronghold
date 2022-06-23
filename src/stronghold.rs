@@ -2,6 +2,7 @@ use std::convert::{TryFrom, Infallible};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use iota_stronghold as stronghold;
 use stronghold::{
+    provider::Provider, 
     procedures::{
         GenerateKey, KeyType,
         StrongholdProcedure,
@@ -9,7 +10,6 @@ use stronghold::{
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
-use stronghold_utils::provider::Provider;
 
 #[derive(Debug)]
 pub struct VaultLocation {
