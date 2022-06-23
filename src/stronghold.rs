@@ -111,20 +111,20 @@ async fn read_from_store(key: String) -> String {
 async fn init_vault() {
   let mut view: DbView<Provider> = DbView::new();
 
-  let key0 = Key::random();
-  let vid0 = VaultId::random::<Provider>().unwrap();
+  let key = Key::random();
+  let vaulId = VaultId::random::<Provider>().unwrap();
   
-   view.init_vault(&key0, vid0);
+   view.init_vault(&key, vaultId);
 } 
 
-async fn get_vault_value(key: Key, vault: VaultId, record: RecordId) {
+async fn get_vault_value(key: Key, vault: VaultId, record: RecordId) -> Result<String, VaultError> {
   view.get_guard::<Infallible, _>(key, vault, record, |g| {
-    Ok(())
+      
+    Ok(g)
   })
 } 
 
-async fn write_vault_value(key: Key, vault: VaultId, record: RecordId, data: String) {
+async fn write_vault_value(key: Key, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
        // write to vault0 and record0
-    view.write(key, vault, record, data, RecordHint::new(b"hint").unwrap())
-        .unwrap();
+    view.write(key, vault, record, data, record_hint)?
 }
