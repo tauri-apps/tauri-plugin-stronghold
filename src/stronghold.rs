@@ -14,7 +14,14 @@ use stronghold::{
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
+use zeroize::Zeroize;
 
+#[derive(PartialEq, Eq, Zeroize)]
+#[zeroize(drop)]
+struct Password(Vec<u8>);
+
+type SnapshotToPasswordMap = HashMap<PathBuf, Arc<Password>>;
+static PASSWORD_STORE: OnceCell<Arc<Mutex<SnapshotToPasswordMap>>> = OnceCell::new();
 static VAULT_ID: OnceCell<Arc<Mutex<VaultId>>> = OnceCell::new();
 
 #[derive(Debug)]
