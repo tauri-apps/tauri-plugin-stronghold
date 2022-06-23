@@ -66,8 +66,9 @@ fn hash_blake2b(input: String) -> Vec<u8> {
 async fn create_snapshot(path: String, client_path: String, output: VaultLocation, key: String) {
     let stronghold = Stronghold::default();
 
-    let client_path = client_path.as_bytes().to_vec();
-    
+    let snapshot_path = SnapshotPath::from_path(format!("{:?}", temp_dir.as_path()));
+    let password = rand::fixed_bytestring(32);
+    let keyprovider = KeyProvider::try_from(password).expect("KeyProvider failed");
 
     }
 
