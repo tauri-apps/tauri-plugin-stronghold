@@ -6,10 +6,7 @@ use stronghold::{
         GenerateKey, KeyType,
         StrongholdProcedure,
     },
-    Client::{
-        provider::Provider
-    }, 
-    ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 
