@@ -123,17 +123,17 @@ async fn init_vault() {
    view.init_vault(&key, vaultId);
 }
 
-async fn get_vault_value(view, DbView, key: Key, vault: VaultId, record: RecordId) -> Result<String, VaultError::Record> {
+async fn get_vault_value(view, DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError::Record> {
   view.get_guard::<Infallible, _>(key, vault, record, |g| {
       
     Ok(g)
   })
 } 
 
-async fn write_vault_value(view: DbView, key: Key, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
+async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
     view.write(key, vault, record, data, record_hint)?
 }
 
-async fn remove_vault_values(view: DbView, key: &Key<P>, vaultId: VaultId, recordId: RecordId) {
+async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) {
     view.revoke_record(key, vaultId, recordId)
 }
