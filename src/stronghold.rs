@@ -4,7 +4,7 @@ use async_std::{
     task::{sleep, spawn},
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap},
     sync::Arc,
     path::{Path, PathBuf},
     thread,
