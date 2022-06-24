@@ -218,7 +218,7 @@ async fn init_vault() {
 
 async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError<Provider>> {
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
-    Ok(from_utf8(&(*g.borrow())).unwrap())
+    Ok(from_utf8(&(*g.borrow())).unwrap().to_owned())
   })
 } 
 
