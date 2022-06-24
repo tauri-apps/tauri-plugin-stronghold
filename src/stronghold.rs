@@ -158,7 +158,7 @@ async fn create_snapshot(snapshot_path: &str, password: &str ) -> Result<()> {
     let stronghold = Stronghold::default();
 
     let snapshot_path = SnapshotPath::from_path(format!("{:?}", snapshot_path.as_path()));
-    let password_vec = password.as_vec();
+    let password_vec = password.to_vec();
     let keyprovider = KeyProvider::try_from(password_vec).expect("KeyProvider failed");
 
     stronghold.create_client(client_path)?;
