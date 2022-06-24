@@ -8,7 +8,8 @@ use std::{
     sync::Arc,
     path::{Path, PathBuf},
     thread,
-    time::{Duration, Instant}
+    time::{Duration, Instant},
+    str::from_utf8
 };
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use once_cell::sync::{OnceCell};
