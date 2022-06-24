@@ -55,8 +55,6 @@ impl Serialize for Error {
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug)]
 pub struct VaultLocation {
     vault_path: String,
