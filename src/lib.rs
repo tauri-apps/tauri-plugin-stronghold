@@ -27,10 +27,6 @@ impl<R: Runtime> Plugin<R> for TauriStronghold<R> {
     }
 }
 
-pub struct TauriStronghold<R: Runtime> {
-    invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
-}
-
 #[tauri::command]
 async fn save_record() {
     
