@@ -15,13 +15,13 @@ use once_cell::sync::{OnceCell};
 use iota_stronghold as stronghold;
 use stronghold::{
     procedures::{
-        GenerateKey, KeyType,
+        KeyType,
         StrongholdProcedure,
     },
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
-use serde::{ser::Serializer};
+use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
 #[derive(PartialEq, Eq, Zeroize)]
