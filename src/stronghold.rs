@@ -21,6 +21,7 @@ use stronghold::{
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
+use serde::{ser::Serializer};
 use zeroize::Zeroize;
 
 #[derive(PartialEq, Eq, Zeroize)]
