@@ -222,9 +222,11 @@ async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: Vaul
 } 
 
 async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), RecordError> {
-    view.write(&key, vault, record, data.as_bytes(), record_hint)?
+    view.write(&key, vault, record, data.as_bytes(), record_hint)?;
+    Ok(())
 }
 
-async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) {
-    view.revoke_record(&key, vaultId, recordId)?
+async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) -> Result<(), VaultError<Provider>> {
+    view.revoke_record(&key, vaultId, recordId)?;
+    Ok(())
 }
