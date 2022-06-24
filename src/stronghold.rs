@@ -116,8 +116,8 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
                     passwords.remove(&snapshot_path);
                     if let Some(curr_snapshot_path) = current_snapshot_path {
                         if &snapshot_path == curr_snapshot_path {
-                            let mut runtime = actor_runtime().lock().await;
-                            let _ = clear_stronghold_cache(&mut runtime, true);
+                           // let mut runtime = actor_runtime().lock().await;
+                          //  let _ = clear_stronghold_cache(&mut runtime, true);
                         }
                     }
                     /*emit_status_change(
