@@ -8,6 +8,7 @@ use std::{
     sync::Arc,
     path::{Path, PathBuf},
     thread,
+    time::{Duration}
 };
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 use once_cell::sync::{OnceCell};
@@ -29,6 +30,8 @@ struct Password(Vec<u8>);
 type SnapshotToPasswordMap = HashMap<PathBuf, Arc<Password>>;
 static PASSWORD_STORE: OnceCell<Arc<Mutex<SnapshotToPasswordMap>>> = OnceCell::new();
 static VAULT_ID: OnceCell<Arc<Mutex<VaultId>>> = OnceCell::new();
+
+const DEFAULT_PASSWORD_CLEAR_INTERVAL: Duration = Duration::from_millis(0);
 
 #[derive(Debug)]
 pub struct VaultLocation {
