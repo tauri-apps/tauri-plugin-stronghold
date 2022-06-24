@@ -56,7 +56,7 @@ impl VaultLocation {
             vault_path: self.vault_path.clone().into_bytes().to_vec(),
         }
     }
-};
+}
 
 fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
     thread::spawn(|| {
