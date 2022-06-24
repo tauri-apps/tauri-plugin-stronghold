@@ -225,5 +225,5 @@ async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: Va
 }
 
 async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) {
-    view.revoke_record(&key, vaultId, recordId)
+    view.revoke_record(&key, vaultId, recordId)?
 }
