@@ -158,8 +158,8 @@ async fn create_snapshot(snapshot_path: &str, password: &str ) {
     let stronghold = Stronghold::default();
 
     let snapshot_path = SnapshotPath::from_path(format!("{:?}", snapshot_path.as_path()));
-   // let password_vec = password.as_bytes();
-    let keyprovider = KeyProvider::try_from(password).expect("KeyProvider failed");
+    let password_vec = password.as_bytes();
+    let keyprovider = KeyProvider::try_from(password_vec).expect("KeyProvider failed");
 
     }
 
@@ -217,7 +217,7 @@ async fn init_vault() {
 
 async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError<Provider>> {
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
-    Ok(from_utf8(&(*g.borrow())))
+    Ok(from_utf8(&(*g.borrow())).unwrap())
   })
 } 
 
