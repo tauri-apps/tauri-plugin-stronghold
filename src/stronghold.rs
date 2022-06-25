@@ -155,7 +155,7 @@ fn hash_blake2b(input: String) -> Vec<u8> {
 async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<(), SnapshotError> {
     let stronghold = Stronghold::default();
     let snapshot_path = SnapshotPath::from_path(Path::new(snapshot_path));
-    let password_vec = password.to_vec();
+    let password_vec = password.as_bytes().to_vec();
     let keyprovider = KeyProvider::try_from(password_vec).expect("KeyProvider failed");
 
     stronghold.create_client(client_path)?;
