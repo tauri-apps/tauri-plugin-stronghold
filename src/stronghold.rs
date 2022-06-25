@@ -19,7 +19,7 @@ use stronghold::{
         KeyType,
         StrongholdProcedure,
     },
-    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 use serde::{ser::Serializer, Serialize};
@@ -152,7 +152,7 @@ fn hash_blake2b(input: String) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<(), ()> {
+async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<(), SnapshotError> {
     let stronghold = Stronghold::default();
     let snapshot_path = SnapshotPath::from_path(Path::new(snapshot_path));
     let password_vec = password.to_vec();
