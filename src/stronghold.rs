@@ -220,7 +220,7 @@ async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: Vaul
   })
 } 
 
-async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(). ()> {
+async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), ()> {
     view.write(&key, vault, record, data.as_bytes(), record_hint)?;
     Ok(())
 }
