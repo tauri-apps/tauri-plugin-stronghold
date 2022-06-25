@@ -135,7 +135,7 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
     Default::default()
 }
 
-async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>> {
+async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>, ()> {
     PASSWORD_STORE
         .get_or_init(default_password_store)
         .lock()
