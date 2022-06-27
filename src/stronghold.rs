@@ -229,3 +229,20 @@ async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId
     view.revoke_record(&key, vaultId, recordId)?;
     Ok(())
 }
+
+async fn write_store_value(key: String, value: String) ->  Result<(), ClientError> {
+    let client = Client::default();
+    let store = client.store();
+   
+    store.insert(key.as_bytes().to_vec(), value.as_bytes().to_vec(), None)?;
+    
+    Ok(())
+}
+
+async read_store_value(key: String) ->  Result<String, ClientError> {
+    let client = Client::default();
+    let store = client.store();
+   
+    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().unwrap().to_vec()).unwrap())
+    
+}
