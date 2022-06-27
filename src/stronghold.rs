@@ -239,7 +239,7 @@ async fn write_store_value(key: String, value: String) ->  Result<(), ClientErro
     Ok(())
 }
 
-async read_store_value(key: String) ->  Result<String, ClientError> {
+async fn read_store_value(key: String) ->  Result<String, ClientError> {
     let client = Client::default();
     let store = client.store();
    
