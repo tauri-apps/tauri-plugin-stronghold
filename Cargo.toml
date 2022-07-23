@@ -10,7 +10,7 @@ exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 [dependencies]
 tauri = "1.0.0"
 thiserror = "1.0"
-iota_stronghold = { version = "0.6.4", features = ["std"] }
+iota_stronghold = { version = "0.8.1", features = ["std"] }
 stronghold_engine = "0.5.3"
 stronghold-p2p = "0.4.1"
 iota-crypto = { version = "0.12.1", features = ["hmac", "sha", "blake2b", "pbkdf", "slip10"] }
