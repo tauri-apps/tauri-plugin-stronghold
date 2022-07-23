@@ -1,7 +1,9 @@
 pub use iota_stronghold::Location;
-use tauri::{plugin::Plugin, Invoke, Runtime};
+use tauri::{plugin::Plugin, Invoke, Runtime, State};
 
 pub mod stronghold;
+
+struct Client(Arc<Mutex<HashMap<Pathbuf , Api>>> ;
 
 pub struct TauriStronghold<R: Runtime> {
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
