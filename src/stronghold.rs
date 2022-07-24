@@ -205,19 +205,6 @@ async fn read_from_store(key: String) -> String {
     return String::from_utf8(record.unwrap()).unwrap();
 }
 
-#[derive(Debug)]
-pub struct Api {
-    snapshot_path: PathBuf,
-}
-
-impl Api {
-    pub fn new<S: AsRef<Path>>(snapshot_path: S) -> Self {
-        Self {
-            snapshot_path: snapshot_path.as_ref().to_path_buf(),
-        }
-    }
-} 
-
 async fn init_vault() {
   let mut view: DbView<Provider> = DbView::new();
 
