@@ -187,6 +187,22 @@ async fn read_snapshot(path: String, client_path: String, key: String, private_k
     let output: Vec<u8> = procedure_result.into();
 }
 
+/// Snapshot status.
+#[derive(Debug, Serialize)]
+#[serde(tag = "status", content = "data")]
+pub enum SnapshotStatus {
+    /// Snapshot is locked. This means that the password must be set again.
+    Locked,
+    /// Snapshot is unlocked. The duration is the amount of time left before it locks again.
+    Unlocked(Duration),
+}
+
+#[derive(Debug, Serialize)]
+/// Stronghold status.
+pub struct Status {
+    snapshot: SnapshotStatus,
+}
+
 #[derive(Debug)]
 pub struct Api {
     snapshot_path: PathBuf,
