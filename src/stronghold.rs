@@ -221,19 +221,17 @@ impl Api {
         }
     }
 
-    pub fn get_vault<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Vault {
+    pub fn get_vault<S: AsRef<str>>(&self, name: S) -> Vault {
         Vault {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
-            flags,
         }
     }
 
-    pub fn get_store<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Store {
+    pub fn get_store<S: AsRef<str>>(&self, name: S) -> Store {
         Store {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
-            flags,
         }
     }
 
