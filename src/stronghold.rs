@@ -187,6 +187,92 @@ async fn read_snapshot(path: String, client_path: String, key: String, private_k
     let output: Vec<u8> = procedure_result.into();
 }
 
+#[derive(Debug)]
+pub struct Api {
+    snapshot_path: PathBuf,
+}
+
+impl Api {
+    pub fn new<S: AsRef<Path>>(snapshot_path: S) -> Self {
+        Self {
+            snapshot_path: snapshot_path.as_ref().to_path_buf(),
+        }
+    }
+
+    pub fn get_vault<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Vault {
+        Vault {
+            snapshot_path: self.snapshot_path.clone(),
+            name: name.as_ref().as_bytes().to_vec(),
+            flags,
+        }
+    }
+
+    pub fn get_store<S: AsRef<str>>(&self, name: S, flags: Vec<StrongholdFlags>) -> Store {
+        Store {
+            snapshot_path: self.snapshot_path.clone(),
+            name: name.as_ref().as_bytes().to_vec(),
+            flags,
+        }
+    }
+
+    pub async fn load(&self, password: Vec<u8>) -> Result<()> {
+        let mut runtime = actor_runtime().lock().await;
+        if CURRENT_SNAPSHOT_PATH
+            .get_or_init(Default::default)
+            .lock()
+            .await
+            .as_ref()
+            == Some(&self.snapshot_path)
+        {
+            let (is_password_empty, is_password_updated) = {
+                let passwords = PASSWORD_STORE
+                    .get_or_init(default_password_store)
+                    .lock()
+                    .await;
+                let stored_password = passwords.get(&self.snapshot_path).map(|p| &p.0);
+                (
+                    stored_password.is_none(),
+                    stored_password != Some(&password),
+                )
+            };
+            if !runtime.spawned_client_paths.is_empty() && !is_password_empty && is_password_updated
+            {
+                save_snapshot(&mut runtime, &self.snapshot_path).await?;
+            }
+        }
+        check_snapshot(
+            &mut runtime,
+            &self.snapshot_path,
+            Some(Arc::new(Password(password.clone()))),
+        )
+        .await?;
+        self.set_password(password).await;
+        emit_status_change(&self.snapshot_path, &self.get_status().await).await;
+        Ok(())
+    }
+
+    pub async fn unload(&self, persist: bool) -> Result<()> {
+        let current_snapshot_path = CURRENT_SNAPSHOT_PATH
+            .get_or_init(Default::default)
+            .lock()
+            .await
+            .clone();
+        if let Some(current) = &current_snapshot_path {
+            if current == &self.snapshot_path {
+                let mut runtime = actor_runtime().lock().await;
+                clear_stronghold_cache(&mut runtime, persist).await?;
+                CURRENT_SNAPSHOT_PATH
+                    .get_or_init(Default::default)
+                    .lock()
+                    .await
+                    .take();
+            }
+        }
+
+        Ok(())
+    }
+} 
+
 async fn write_from_store(key: String, value: String) -> Result<(), ClientError> {
     let client = Client::default();
     let store = client.store();
