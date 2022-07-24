@@ -27,8 +27,6 @@ use zeroize::Zeroize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("`{0}`")]
-    StrongholdError(#[from] iota_stronghold::Error),
     #[error("record not found")]
     RecordNotFound,
     #[error("failed to perform action: `{0}`")]
