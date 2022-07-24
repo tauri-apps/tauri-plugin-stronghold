@@ -25,6 +25,31 @@ use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("`{0}`")]
+    StrongholdError(#[from] iota_stronghold::Error),
+    #[error("record not found")]
+    RecordNotFound,
+    #[error("failed to perform action: `{0}`")]
+    FailedToPerformAction(String),
+    #[error("snapshot password not set")]
+    PasswordNotSet,
+    #[error(transparent)]
+    InvalidPeer(Box<dyn std::error::Error + Send>),
+}
+
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[derive(PartialEq, Eq, Zeroize)]
 #[zeroize(drop)]
 struct Password(Vec<u8>);
