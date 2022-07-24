@@ -63,23 +63,6 @@ static STRONGHOLD_ACCESS_STORE: OnceCell<Arc<Mutex<HashMap<PathBuf, Instant>>>> 
 
 const DEFAULT_PASSWORD_CLEAR_INTERVAL: Duration = Duration::from_millis(0);
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("record not found")]
-    RecordNotFound,
-    #[error("snapshot password not set")]
-    PasswordNotSet,
-}
-
-impl Serialize for Error {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.to_string().as_str())
-    }
-}
-
 #[derive(Debug)]
 pub struct VaultLocation {
     vault_path: String,
