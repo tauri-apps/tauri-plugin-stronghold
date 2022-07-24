@@ -3,7 +3,7 @@ use tauri::{plugin::Plugin, Invoke, Runtime, State};
 
 pub mod stronghold;
 
-struct api(Arc<Mutex<HashMap<Pathbuf , Api>>> ;
+//struct api(Arc<Mutex<HashMap<Pathbuf , Api>>>) ;
 
 pub struct TauriStronghold<R: Runtime> {
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
