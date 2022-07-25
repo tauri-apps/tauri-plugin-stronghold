@@ -145,13 +145,13 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
                           //  let _ = clear_stronghold_cache(&mut runtime, true);
                         }
                     }
-                    /*emit_status_change(
+                    emit_status_change(
                         &snapshot_path,
                         &Status {
                             snapshot: SnapshotStatus::Locked,
                         },
                     )
-                    .await;*/
+                    .await;
                 }
             }
         })
