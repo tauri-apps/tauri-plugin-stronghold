@@ -421,3 +421,46 @@ async fn check_snapshot(
 
     Ok(())
 }
+
+
+async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -> Result<()> {
+    if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
+        .get_or_init(Default::default)
+        .lock()
+        .await
+        .as_ref()
+    {
+        if persist && !runtime.spawned_client_paths.is_empty() {
+            save_snapshot(runtime, curr_snapshot_path).await?;
+        }
+        for path in &runtime.spawned_client_paths {
+            stronghold_response_to_result(
+                runtime
+                    .stronghold
+                    .kill_stronghold(path.clone(), false)
+                    .await,
+            )?;
+            stronghold_response_to_result(
+                runtime.stronghold.kill_stronghold(path.clone(), true).await,
+            )?;
+        }
+        // delay to wait for the actors to be killed
+        thread::sleep(std::time::Duration::from_millis(300));
+        runtime.spawned_client_paths = HashSet::new();
+        runtime.loaded_client_paths = HashSet::new();
+    }
+
+    Ok(())
+}
+
+async fn switch_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
+    clear_stronghold_cache(runtime, true).await?;
+
+    CURRENT_SNAPSHOT_PATH
+        .get_or_init(Default::default)
+        .lock()
+        .await
+        .replace(snapshot_path.to_path_buf());
+
+    Ok(())
+}
