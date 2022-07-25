@@ -195,7 +195,7 @@ async fn read_snapshot(path: String, client_path: String, password: &str) -> Res
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)
-        .expect("Could not load client from Snapshot")?
+        .expect("Could not load client from Snapshot")?;
 }
 
 /// Snapshot status.
