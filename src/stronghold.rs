@@ -226,7 +226,7 @@ impl Api {
         }
     }
 
-    pub fn get_vault<S: AsRef<str>>(&self, name: S) -> Vault {
+    pub fn get_vault(&self, name: S) -> Vault {
         Vault {
             snapshot_path: self.snapshot_path.clone(),
             name: name.as_ref().as_bytes().to_vec(),
