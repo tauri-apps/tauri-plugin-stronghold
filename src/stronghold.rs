@@ -343,7 +343,6 @@ async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId
 // check if the snapshot path is different than the current loaded one
 // if it is, write the current snapshot and load the new one
 async fn check_snapshot(
-    runtime: &mut ActorRuntime,
     snapshot_path: &Path,
     password: Option<Arc<Password>>,
 ) -> Result<()> {
@@ -435,7 +434,7 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
     Ok(())
 }
 
-async fn switch_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
+async fn switch_snapshot(snapshot_path: &Path) -> Result<()> {
     clear_stronghold_cache(runtime, true).await?;
 
     CURRENT_SNAPSHOT_PATH
