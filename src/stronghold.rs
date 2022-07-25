@@ -186,14 +186,12 @@ async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str)
     Ok(()) 
     }
 
-async fn read_snapshot(path: String, client_path: String, key: String, private_key_location: VaultLocation) {
+async fn read_snapshot(path: String, client_path: String, password: &str) {
     let stronghold = Stronghold::default();
     let client_path = client_path.as_bytes().to_vec();
     let snapshot_path = SnapshotPath::from_path(path);
 
-    // calculate hash from key
-    let key = hash_blake2b(key);
-    let keyprovider = KeyProvider::try_from(key).expect("Failed to load key");
+    let keyprovider = KeyProvider::from(password).expect("Failed to load key");
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)
