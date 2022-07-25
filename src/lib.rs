@@ -1,5 +1,5 @@
 pub use iota_stronghold::Location;
-use tauri::{plugin::Plugin, Invoke, Runtime, State};
+use tauri::{plugin::Plugin, Invoke, Runtime};
 
 pub mod stronghold;
 
