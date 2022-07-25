@@ -371,21 +371,7 @@ async fn check_snapshot(
         if snapshot_path.exists() {
             if let Some(client_path) = runtime.loaded_client_paths.iter().next() {
                 // reload a client to check if the password is correct
-                stronghold_response_to_result(
-                    runtime
-                        .stronghold
-                        .read_snapshot(
-                            client_path.to_vec(),
-                            None,
-                            &get_password_if_needed(snapshot_path, password)
-                                .await?
-                                .0
-                                .to_vec(),
-                            None,
-                            Some(snapshot_path.to_path_buf()),
-                        )
-                        .await,
-                )?;
+		read_snasphot()?;
             }
         }
     } else {
