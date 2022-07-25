@@ -429,6 +429,19 @@ async fn check_snapshot(
     Ok(())
 }
 
+// saves the snapshot to the file system.
+async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
+    stronghold_response_to_result(
+        runtime
+            .stronghold
+            .write_all_to_snapshot(
+                &get_password(snapshot_path).await?.0.to_vec(),
+                None,
+                Some(snapshot_path.to_path_buf()),
+            )
+            .await,
+    )
+}
 
 async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -> Result<()> {
     if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
