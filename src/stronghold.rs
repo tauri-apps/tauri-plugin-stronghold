@@ -19,7 +19,7 @@ use stronghold::{
         KeyType,
         StrongholdProcedure,
     },
-    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError, Store
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId, view::Vault};
 use serde::{ser::Serializer, Serialize};
