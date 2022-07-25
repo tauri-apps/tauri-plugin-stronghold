@@ -282,7 +282,7 @@ impl Api {
             .clone();
         if let Some(current) = &current_snapshot_path {
             if current == &self.snapshot_path {
-                clear_stronghold_cache(&mut runtime, persist).await?;
+                clear_stronghold_cache(persist).await?;
                 CURRENT_SNAPSHOT_PATH
                     .get_or_init(Default::default)
                     .lock()
@@ -357,7 +357,7 @@ async fn check_snapshot(
         // if the current loaded snapshot is different than the snapshot we're tring to use,
         // save the current snapshot and clear the cache
         if curr_snapshot_path != snapshot_path {
-            switch_snapshot(runtime, snapshot_path).await?;
+            switch_snapshot(snapshot_path).await?;
         }
         if snapshot_path.exists() {
             if let Some(client_path) = runtime.loaded_client_paths.iter().next() {
@@ -435,7 +435,7 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
 }
 
 async fn switch_snapshot(snapshot_path: &Path) -> Result<()> {
-    clear_stronghold_cache(runtime, true).await?;
+    clear_stronghold_cache(true).await?;
 
     CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
