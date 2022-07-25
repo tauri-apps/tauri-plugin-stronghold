@@ -352,3 +352,54 @@ async fn read_store_value(key: String) ->  Result<String, ClientError> {
     Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().unwrap().to_vec()).unwrap())
     
 }
+
+// check if the snapshot path is different than the current loaded one
+// if it is, write the current snapshot and load the new one
+async fn check_snapshot(
+    runtime: &mut ActorRuntime,
+    snapshot_path: &Path,
+    password: Option<Arc<Password>>,
+) -> Result<()> {
+    let curr_snapshot_path = CURRENT_SNAPSHOT_PATH
+        .get_or_init(Default::default)
+        .lock()
+        .await
+        .as_ref()
+        .cloned();
+
+    if let Some(curr_snapshot_path) = &curr_snapshot_path {
+        // if the current loaded snapshot is different than the snapshot we're tring to use,
+        // save the current snapshot and clear the cache
+        if curr_snapshot_path != snapshot_path {
+            switch_snapshot(runtime, snapshot_path).await?;
+        }
+        if snapshot_path.exists() {
+            if let Some(client_path) = runtime.loaded_client_paths.iter().next() {
+                // reload a client to check if the password is correct
+                stronghold_response_to_result(
+                    runtime
+                        .stronghold
+                        .read_snapshot(
+                            client_path.to_vec(),
+                            None,
+                            &get_password_if_needed(snapshot_path, password)
+                                .await?
+                                .0
+                                .to_vec(),
+                            None,
+                            Some(snapshot_path.to_path_buf()),
+                        )
+                        .await,
+                )?;
+            }
+        }
+    } else {
+        CURRENT_SNAPSHOT_PATH
+            .get_or_init(Default::default)
+            .lock()
+            .await
+            .replace(snapshot_path.to_path_buf());
+    }
+
+    Ok(())
+}
