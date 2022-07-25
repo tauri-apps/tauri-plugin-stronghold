@@ -186,7 +186,7 @@ async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str)
     Ok(()) 
     }
 
-async fn read_snapshot(path: String, client_path: String, password: &str) {
+async fn read_snapshot(path: String, client_path: String, password: &str) -> Result<()> {
     let stronghold = Stronghold::default();
     let client_path = client_path.as_bytes().to_vec();
     let snapshot_path = SnapshotPath::from_path(path);
@@ -195,18 +195,7 @@ async fn read_snapshot(path: String, client_path: String, password: &str) {
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)
-        .expect("Could not load client from Snapshot");
-
-    // get the public key
-    let public_key_procedure = stronghold::procedures::PublicKey {
-        ty: KeyType::Ed25519,
-        private_key: private_key_location.to_location(),
-    };
-
-    let procedure_result = client.execute_procedure(StrongholdProcedure::PublicKey(public_key_procedure));
-
-    let procedure_result = procedure_result.unwrap();
-    let output: Vec<u8> = procedure_result.into();
+        .expect("Could not load client from Snapshot")?
 }
 
 /// Snapshot status.
