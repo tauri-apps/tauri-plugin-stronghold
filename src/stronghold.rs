@@ -241,7 +241,6 @@ impl Api {
     }
 
     pub async fn load(&self, password: Vec<u8>) -> Result<()> {
-        let mut runtime = actor_runtime().lock().await;
         if CURRENT_SNAPSHOT_PATH
             .get_or_init(Default::default)
             .lock()
@@ -260,13 +259,12 @@ impl Api {
                     stored_password != Some(&password),
                 )
             };
-            if !runtime.spawned_client_paths.is_empty() && !is_password_empty && is_password_updated
+            if !is_password_empty && is_password_updated
             {
-                save_snapshot(&mut runtime, &self.snapshot_path).await?;
+                save_snapshot(&self.snapshot_path).await?;
             }
         }
         check_snapshot(
-            &mut runtime,
             &self.snapshot_path,
             Some(Arc::new(Password(password.clone()))),
         )
@@ -284,7 +282,6 @@ impl Api {
             .clone();
         if let Some(current) = &current_snapshot_path {
             if current == &self.snapshot_path {
-                let mut runtime = actor_runtime().lock().await;
                 clear_stronghold_cache(&mut runtime, persist).await?;
                 CURRENT_SNAPSHOT_PATH
                     .get_or_init(Default::default)
@@ -395,7 +392,7 @@ async fn check_snapshot(
 }
 
 // saves the snapshot to the file system.
-async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Result<()> {
+async fn save_snapshot(snapshot_path: &Path) -> Result<()> {
     stronghold_response_to_result(
         runtime
             .stronghold
@@ -408,15 +405,15 @@ async fn save_snapshot(runtime: &mut ActorRuntime, snapshot_path: &Path) -> Resu
     )
 }
 
-async fn clear_stronghold_cache(mut runtime: &mut ActorRuntime, persist: bool) -> Result<()> {
+async fn clear_stronghold_cache(persist: bool) -> Result<()> {
     if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
         .lock()
         .await
         .as_ref()
     {
-        if persist && !runtime.spawned_client_paths.is_empty() {
-            save_snapshot(runtime, curr_snapshot_path).await?;
+        if persist {
+            save_snapshot(curr_snapshot_path).await?;
         }
         for path in &runtime.spawned_client_paths {
             stronghold_response_to_result(
