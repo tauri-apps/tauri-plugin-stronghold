@@ -25,6 +25,12 @@ use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId, view::Vault};
 use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
+struct StatusChangeEventHandler {
+    on_event: Box<dyn FnMut(&Path, &Status) + Send>,
+}
+
+type StrongholdStatusChangeListeners = Arc<Mutex<Vec<StatusChangeEventHandler>>>;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("record not found")]
