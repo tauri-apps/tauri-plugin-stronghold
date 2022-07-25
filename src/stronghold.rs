@@ -83,6 +83,18 @@ impl VaultLocation {
     }
 }
 
+fn status_change_listeners() -> &'static StrongholdStatusChangeListeners {
+    static LISTENERS: Lazy<StrongholdStatusChangeListeners> = Lazy::new(Default::default);
+    &LISTENERS
+}
+
+async fn emit_status_change(snapshot_path: &Path, status: &Status) {
+    let mut listeners = status_change_listeners().lock().await;
+    for listener in listeners.deref_mut() {
+        (listener.on_event)(snapshot_path, status)
+    }
+}
+
 fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
     thread::spawn(|| {
         spawn(async {
