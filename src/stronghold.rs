@@ -169,6 +169,65 @@ async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>, Error::Pass
         .ok_or(Error::PasswordNotSet)
 }
 
+
+fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
+    thread::spawn(|| {
+        spawn(async {
+            loop {
+                let interval = *PASSWORD_CLEAR_INTERVAL
+                    .get_or_init(|| Arc::new(Mutex::new(DEFAULT_PASSWORD_CLEAR_INTERVAL)))
+                    .lock()
+                    .await;
+                sleep(interval).await;
+
+                if interval.as_nanos() == 0 {
+                    continue;
+                }
+
+                let mut passwords = PASSWORD_STORE
+                    .get_or_init(default_password_store)
+                    .lock()
+                    .await;
+                let access_store = STRONGHOLD_ACCESS_STORE
+                    .get_or_init(Default::default)
+                    .lock()
+                    .await;
+                let mut snapshots_paths_to_clear = Vec::new();
+                for (snapshot_path, _) in passwords.iter() {
+                    // if the stronghold was accessed `interval` ago, we clear the password
+                    if let Some(access_instant) = access_store.get(snapshot_path) {
+                        if access_instant.elapsed() > interval {
+                            snapshots_paths_to_clear.push(snapshot_path.clone());
+                        }
+                    }
+                }
+
+                let current_snapshot_path = &*CURRENT_SNAPSHOT_PATH
+                    .get_or_init(Default::default)
+                    .lock()
+                    .await;
+                for snapshot_path in snapshots_paths_to_clear {
+                    passwords.remove(&snapshot_path);
+                    if let Some(curr_snapshot_path) = current_snapshot_path {
+                        if &snapshot_path == curr_snapshot_path {
+                            let mut runtime = actor_runtime().lock().await;
+                            let _ = clear_stronghold_cache(&mut runtime, true);
+                        }
+                    }
+                    emit_status_change(
+                        &snapshot_path,
+                        &Status {
+                            snapshot: SnapshotStatus::Locked,
+                        },
+                    )
+                    .await;
+                }
+            }
+        })
+    });
+    Default::default()
+}
+
 /// Calculates the Blake2b from a String
 fn hash_blake2b(input: String) -> Vec<u8> {
     let mut hasher = Blake2b256::new();
