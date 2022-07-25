@@ -101,13 +101,6 @@ async fn emit_status_change(snapshot_path: &Path, status: &Status) {
     }
 }
 
-pub fn stronghold_response_to_result<T>(status: ResultMessage<T>) -> Result<T> {
-    match status {
-        ResultMessage::Ok(v) => Ok(v),
-        ResultMessage::Error(e) => Err(Error::FailedToPerformAction(e)),
-    }
-}
-
 fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
     thread::spawn(|| {
         spawn(async {
