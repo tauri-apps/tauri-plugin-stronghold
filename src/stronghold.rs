@@ -21,7 +21,7 @@ use stronghold::{
     },
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError
 };
-use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
+use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId, view::Vault};
 use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
