@@ -111,6 +111,15 @@ async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>, Error::Pass
         .ok_or(Error::PasswordNotSet)
 }
 
+async fn get_password_if_needed(
+    snapshot_path: &Path,
+    password: Option<Arc<Password>>,
+) -> Result<Arc<Password>> {
+    match password {
+        Some(password) => Ok(password),
+        None => get_password(snapshot_path).await,
+    }
+}
 
 fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
     thread::spawn(|| {
