@@ -298,6 +298,7 @@ impl Api {
     }
 } 
 
+//Store API
 async fn write_from_store(key: String, value: String) -> Result<(), ClientError> {
     let client = Client::default();
     let store = client.store();
@@ -316,6 +317,7 @@ async fn read_from_store(key: String) -> String {
     return String::from_utf8(record.unwrap()).unwrap();
 }
 
+//Vault API
 async fn init_vault() {
   let mut view: DbView<Provider> = DbView::new();
 
@@ -339,23 +341,6 @@ async fn write_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: Va
 async fn remove_vault_values(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) -> Result<(), VaultError<Provider>> {
     view.revoke_record(&key, vaultId, recordId)?;
     Ok(())
-}
-
-async fn write_store_value(key: String, value: String) ->  Result<(), ClientError> {
-    let client = Client::default();
-    let store = client.store();
-   
-    store.insert(key.as_bytes().to_vec(), value.as_bytes().to_vec(), None)?;
-    
-    Ok(())
-}
-
-async fn read_store_value(key: String) ->  Result<String, ClientError> {
-    let client = Client::default();
-    let store = client.store();
-   
-    Ok(String::from_utf8(store.get(key.as_bytes()).unwrap().unwrap().to_vec()).unwrap())
-    
 }
 
 // check if the snapshot path is different than the current loaded one
