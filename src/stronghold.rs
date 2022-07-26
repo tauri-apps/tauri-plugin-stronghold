@@ -324,7 +324,7 @@ async fn read_from_store(key: String) -> String {
 }
 
 //Vault API
-pub async fn init(password: Key, vault Id: VaultId) {
+pub async fn init(password: Key, vaultId: VaultId) {
   let mut view: DbView<Provider> = DbView::new();
   
   view.init_vault(&key, vaultId);
