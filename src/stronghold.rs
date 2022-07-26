@@ -324,13 +324,10 @@ async fn read_from_store(key: String) -> String {
 }
 
 //Vault API
-async fn init_vault() {
+pub async fn init(password: Key, vault Id: VaultId) {
   let mut view: DbView<Provider> = DbView::new();
-
-  let key = Key::random();
-  let vaultId = VaultId::random::<Provider>().unwrap();
   
-   view.init_vault(&key, vaultId);
+  view.init_vault(&key, vaultId);
 }
 
 async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError<Provider>> {
