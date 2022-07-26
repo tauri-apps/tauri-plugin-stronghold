@@ -229,26 +229,6 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new<S: AsRef<Path>>(snapshot_path: S) -> Self {
-        Self {
-            snapshot_path: snapshot_path.as_ref().to_path_buf(),
-        }
-    }
-
-    pub fn get_vault(&self, name: S) -> Vault {
-        Vault {
-            snapshot_path: self.snapshot_path.clone(),
-            name: name.as_ref().as_bytes().to_vec(),
-        }
-    }
-
-    pub fn get_store<S: AsRef<str>>(&self, name: S) -> Store {
-        Store {
-            snapshot_path: self.snapshot_path.clone(),
-            name: name.as_ref().as_bytes().to_vec(),
-        }
-    }
-
     pub async fn load(&self, password: Vec<u8>) -> Result<()> {
         if CURRENT_SNAPSHOT_PATH
             .get_or_init(Default::default)
