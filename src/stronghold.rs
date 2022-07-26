@@ -420,10 +420,6 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
                 runtime.stronghold.kill_stronghold(path.clone(), true).await,
             )?;
         }
-        // delay to wait for the actors to be killed
-        thread::sleep(std::time::Duration::from_millis(300));
-        runtime.spawned_client_paths = HashSet::new();
-        runtime.loaded_client_paths = HashSet::new();
     }
 
     Ok(())
