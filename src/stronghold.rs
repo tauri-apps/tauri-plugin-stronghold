@@ -307,7 +307,7 @@ async fn read_from_store(key: String) -> String {
 pub async fn init(password: Key, vaultId: VaultId) {
   let mut view: DbView<Provider> = DbView::new();
   
-  view.init_vault(&key, vaultId);
+  view.init_vault(&password, vaultId);
 }
 
 async fn get_vault_value(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError<Provider>> {
