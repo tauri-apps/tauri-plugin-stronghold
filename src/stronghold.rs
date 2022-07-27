@@ -34,6 +34,8 @@ pub enum Error {
     ClientError(#[from] ClientError),
     #[error("`{0}`")]
     SnapshotError(#[from] SnapshotError),
+    #[error("`{0}`")]
+    VaultError(#[from] VaultError),
     #[error("record not found")]
     RecordNotFound(#[from] RecordError),
     #[error("failed to perform action: `{0}`")]
