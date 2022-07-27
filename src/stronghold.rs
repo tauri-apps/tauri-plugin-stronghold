@@ -8,6 +8,7 @@ use std::{
     sync::Arc,
     path::{Path, PathBuf},
     thread,
+    ops::DerefMut,
     time::{Duration, Instant},
     str::from_utf8
 };
