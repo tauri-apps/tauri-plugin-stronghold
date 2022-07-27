@@ -31,9 +31,9 @@ type StrongholdStatusChangeListeners = Arc<Mutex<Vec<StatusChangeEventHandler>>>
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("`{0}`")]
-    ClientError(#[from] stronghold::ClientError),
+    ClientError(#[from] ClientError),
     #[error("record not found")]
-    RecordNotFound,
+    RecordNotFound(#[from] RecordError,
     #[error("failed to perform action: `{0}`")]
     FailedToPerformAction(String),
     #[error("snapshot password not set")]
@@ -100,7 +100,7 @@ async fn emit_status_change(snapshot_path: &Path, status: &Status) {
     }
 }
 
-async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>, Error::PasswordNotSet> {
+async fn get_password(snapshot_path: &Path) -> Result<Arc<Password>> {
     PASSWORD_STORE
         .get_or_init(default_password_store)
         .lock()
@@ -184,7 +184,7 @@ fn hash_blake2b(input: String) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<(), SnapshotError> {
+async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<()> {
     let stronghold = Stronghold::default();
     let snapshot_path = SnapshotPath::from_path(Path::new(snapshot_path));
     let password_vec = password.as_bytes().to_vec();
@@ -283,7 +283,7 @@ impl Api {
 } 
 
 //Store API
-async fn write_from_store(key: String, value: String) -> Result<(), ClientError> {
+async fn write_from_store(key: String, value: String) -> Result<()> {
     let client = Client::default();
     let store = client.store();
 
