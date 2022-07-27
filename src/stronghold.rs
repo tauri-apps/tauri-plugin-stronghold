@@ -316,12 +316,12 @@ async fn get_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, 
   })
 } 
 
-async fn save_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<(), ()> {
+async fn save_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<()> {
     view.write(&key, vault, record, data.as_bytes(), record_hint)?;
     Ok(())
 }
 
-async fn remove_record(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) -> Result<(), VaultError<Provider>> {
+async fn remove_record(view: DbView<Provider>, key: Key<Provider>, vaultId: VaultId, recordId: RecordId) -> Result<()> {
     view.revoke_record(&key, vaultId, recordId)?;
     Ok(())
 }
