@@ -199,7 +199,7 @@ async fn read_snapshot(path: String, client_path: String, password: &str) -> Res
     let client_path = client_path.as_bytes().to_vec();
     let snapshot_path = SnapshotPath::from_path(path);
 
-    let keyprovider = KeyProvider::from(password).expect("Failed to load key");
+    let keyprovider = KeyProvider::from(password);
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)
