@@ -1,5 +1,8 @@
 use tauri::{plugin::Plugin, Invoke, Runtime};
 use engine::vault::{Key};
+use stronghold::{
+     Provider
+};
 
 pub mod stronghold;
 
