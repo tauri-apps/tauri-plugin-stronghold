@@ -1,8 +1,12 @@
 use tauri::{plugin::Plugin, Invoke, Runtime};
 use engine::vault::{Key};
+
+use iota_stronghold as stronghold;
 use stronghold::{
      Provider
 };
+
+use std::convert::{TryInto},
 
 pub mod stronghold;
 
