@@ -15,9 +15,9 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use once_cell::sync::{Lazy, OnceCell};
 use iota_stronghold as stronghold;
 use stronghold::{
-    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError, Store
+    Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError
 };
-use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId, view::Vault};
+use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId};
 use serde::{ser::Serializer, Serialize};
 use zeroize::Zeroize;
 
