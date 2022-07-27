@@ -1,4 +1,3 @@
-use std::convert::{TryFrom, Infallible};
 use async_std::{
     sync::Mutex,
     task::{sleep, spawn},
@@ -8,6 +7,7 @@ use std::{
     sync::Arc,
     path::{Path, PathBuf},
     thread,
+    convert::{TryFrom, Infallible},
     ops::DerefMut,
     time::{Duration, Instant},
     str::from_utf8
@@ -35,7 +35,7 @@ pub enum Error {
     #[error("`{0}`")]
     SnapshotError(#[from] SnapshotError),
     #[error("`{0}`")]
-    VaultError(#[from] VaultError),
+    VaultError(#[from] VaultError<Infallible>),
     #[error("record not found")]
     RecordNotFound(#[from] RecordError),
     #[error("failed to perform action: `{0}`")]
