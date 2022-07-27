@@ -361,8 +361,8 @@ async fn check_snapshot(
 }
 
 // saves the snapshot to the file system.
-async fn save_snapshot(client: Client, snapshot_path: String, key: String) -> Result<()> {
-    client.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key))?;
+async fn save_snapshot(stronghold: Stronghold, snapshot_path: String, key: String) -> Result<()> {
+    stronghold.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key))?;
     Ok(()) 
 }
 
