@@ -373,17 +373,8 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
     {
         if persist {
             save_snapshot(curr_snapshot_path).await?;
-        }
-        for path in &runtime.spawned_client_paths {
-            stronghold_response_to_result(
-                runtime
-                    .stronghold
-                    .kill_stronghold(path.clone(), false)
-                    .await,
-            )?;
-            stronghold_response_to_result(
-                runtime.stronghold.kill_stronghold(path.clone(), true).await,
-            )?;
+        } 
+	Stronghold::reset();
         }
     }
 
