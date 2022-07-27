@@ -34,7 +34,7 @@ async fn save_record() {
     
 }
 
-fn password_to_key(password: &str) -> Key {
+fn password_to_key(password: &str) -> Key<Provider> {
     let mut dk = [0; 64];
     // safe to unwrap (rounds > 0)
     crypto::keys::pbkdf::PBKDF2_HMAC_SHA512(password.as_bytes(), b"tauri", 100, &mut dk).unwrap();
