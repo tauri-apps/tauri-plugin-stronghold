@@ -6,7 +6,7 @@ use stronghold::{
      Provider
 };
 
-use std::convert::{TryInto},
+use std::convert::{TryInto};
 
 pub mod stronghold;
 
