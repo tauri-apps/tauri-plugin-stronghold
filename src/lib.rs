@@ -1,8 +1,7 @@
 use tauri::{plugin::Plugin, Invoke, Runtime};
 use engine::vault::{Key};
 
-use iota_stronghold as stronghold;
-use stronghold::{
+use iota_stronghold::{
      Provider
 };
 
