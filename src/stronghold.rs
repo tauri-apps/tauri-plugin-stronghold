@@ -33,7 +33,7 @@ pub enum Error {
     #[error("`{0}`")]
     ClientError(#[from] ClientError),
     #[error("record not found")]
-    RecordNotFound(#[from] RecordError,
+    RecordNotFound(#[from] RecordError),
     #[error("failed to perform action: `{0}`")]
     FailedToPerformAction(String),
     #[error("snapshot password not set")]
