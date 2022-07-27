@@ -310,7 +310,7 @@ pub async fn init(password: Key<Provider>, vaultId: VaultId) {
   view.init_vault(&password, vaultId);
 }
 
-async fn get_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String, VaultError<Provider>> {
+async fn get_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String> {
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
     Ok(from_utf8(&(*g.borrow())).unwrap().to_owned())
   })
