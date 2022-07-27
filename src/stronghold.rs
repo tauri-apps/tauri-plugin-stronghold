@@ -30,6 +30,8 @@ type StrongholdStatusChangeListeners = Arc<Mutex<Vec<StatusChangeEventHandler>>>
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("`{0}`")]
+    ClientError(#[from] stronghold::ClientError),
     #[error("record not found")]
     RecordNotFound,
     #[error("failed to perform action: `{0}`")]
