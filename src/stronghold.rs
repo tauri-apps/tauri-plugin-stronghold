@@ -375,7 +375,6 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
             save_snapshot(curr_snapshot_path).await?;
         } 
 	Stronghold::reset();
-        }
     }
 
     Ok(())
