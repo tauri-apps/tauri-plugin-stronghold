@@ -4,7 +4,7 @@ use async_std::{
     task::{sleep, spawn},
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap},
     sync::Arc,
     path::{Path, PathBuf},
     thread,
@@ -15,10 +15,6 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use once_cell::sync::{Lazy, OnceCell};
 use iota_stronghold as stronghold;
 use stronghold::{
-    procedures::{
-        KeyType,
-        StrongholdProcedure,
-    },
     Client, ClientError, KeyProvider, Location, SnapshotPath, Stronghold, RecordError, VaultError, Provider, SnapshotError, Store
 };
 use engine::vault::{DbView, Key, RecordHint, RecordId, VaultId, view::Vault};
@@ -304,7 +300,7 @@ async fn read_from_store(key: String) -> String {
 }
 
 //Vault API
-pub async fn init(password: Key, vaultId: VaultId) {
+pub async fn init(password: Key<Provider>, vaultId: VaultId) {
   let mut view: DbView<Provider> = DbView::new();
   
   view.init_vault(&password, vaultId);
