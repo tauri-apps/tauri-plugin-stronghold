@@ -247,7 +247,7 @@ impl Api {
                     .get_or_init(default_password_store)
                     .lock()
                     .await;
-                let stored_password = passwords.get(&self.snapshot_path).map(|p| &p.0);
+                let stored_password = passwords.get(&self.snapshot_path.clone()).map(|p| &p.0);
                 (
                     stored_password.is_none(),
                     stored_password != Some(&password),
@@ -255,7 +255,7 @@ impl Api {
             };
             if !is_password_empty && is_password_updated
             {
-                save_snapshot(stronghold, self.snapshot_path, password).await?;
+                save_snapshot(stronghold, self.snapshot_path, password.clone()).await?;
             }
         }
         check_snapshot(
