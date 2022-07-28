@@ -286,6 +286,21 @@ impl Api {
 
         Ok(())
     }
+
+    pub async fn set_password(&self, password: Vec<u8>) {
+        let mut passwords = PASSWORD_STORE
+            .get_or_init(default_password_store)
+            .lock()
+            .await;
+        let mut access_store = STRONGHOLD_ACCESS_STORE
+            .get_or_init(Default::default)
+            .lock()
+            .await;
+
+        access_store.insert(self.snapshot_path.clone(), Instant::now());
+        passwords.insert(self.snapshot_path.clone(), Arc::new(Password(password)));
+    }
+	
 } 
 
 //Store API
