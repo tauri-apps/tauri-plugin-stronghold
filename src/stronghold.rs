@@ -421,6 +421,7 @@ async fn save_snapshot(stronghold: Stronghold, snapshot_path: String, key: Strin
 }
 
 async fn clear_stronghold_cache(persist: bool) -> Result<()> {
+    let stronghold = Stronghold::default();
     if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
         .lock()
@@ -428,7 +429,7 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
         .as_ref()
     {
         if persist {
-            save_snapshot(curr_snapshot_path).await?;
+            save_snapshot(stronghold, curr_snapshot_path).await?;
         } 
 	Stronghold::reset();
     }
