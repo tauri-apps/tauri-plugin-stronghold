@@ -366,7 +366,7 @@ async fn get_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, 
   let record;
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
     record = from_utf8(&(*g.borrow())).unwrap().to_owned()
-  })
+  });
   Ok(record)
 } 
 
