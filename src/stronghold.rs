@@ -207,6 +207,8 @@ async fn read_snapshot(path: String, client_path: String, password: Vec<u8>) -> 
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)?;
+	
+    Ok(())
 }
 
 /// Snapshot status.
