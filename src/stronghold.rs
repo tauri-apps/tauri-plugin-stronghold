@@ -255,7 +255,7 @@ impl Api {
             };
             if !is_password_empty && is_password_updated
             {
-                save_snapshot(stronghold, &self.snapshot_path).await?;
+                save_snapshot(stronghold, &self.snapshot_path, password).await?;
             }
         }
         check_snapshot(
@@ -417,12 +417,12 @@ async fn check_snapshot(
 }
 
 // saves the snapshot to the file system.
-async fn save_snapshot(stronghold: Stronghold, snapshot_path: String, key: String) -> Result<()> {
+async fn save_snapshot(stronghold: Stronghold, snapshot_path: String, key: Vec<u8>) -> Result<()> {
     stronghold.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key))?;
     Ok(()) 
 }
 
-async fn clear_stronghold_cache(persist: bool) -> Result<()> {
+async fn clear_stronghold_cache(persist: bool, password: Vec<u8>) -> Result<()> {
     let stronghold = Stronghold::default();
     if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
@@ -431,9 +431,9 @@ async fn clear_stronghold_cache(persist: bool) -> Result<()> {
         .as_ref()
     {
         if persist {
-            save_snapshot(stronghold, curr_snapshot_path).await?;
+            save_snapshot(stronghold, curr_snapshot_path, password).await?;
         } 
-	Stronghold::reset();
+	stronghold.reset();
     }
 
     Ok(())
