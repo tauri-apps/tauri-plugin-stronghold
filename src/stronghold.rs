@@ -418,7 +418,7 @@ async fn check_snapshot(
 
 // saves the snapshot to the file system.
 async fn save_snapshot(stronghold: Stronghold, snapshot_path: PathBuf, key: Vec<u8>) -> Result<()> {
-    stronghold.commit(&SnapshotPath::from_path(snapshot_path), KeyProvider::try_from(key).unwrap())?;
+    stronghold.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key).unwrap())?;
     Ok(()) 
 }
 
