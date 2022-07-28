@@ -268,7 +268,7 @@ impl Api {
         Ok(())
     }
 
-    pub async fn unload(&self, persist: bool) -> Result<()> {
+    pub async fn unload(&self, persist: bool, password: Vec<u8>) -> Result<()> {
         let current_snapshot_path = CURRENT_SNAPSHOT_PATH
             .get_or_init(Default::default)
             .lock()
@@ -276,7 +276,7 @@ impl Api {
             .clone();
         if let Some(current) = &current_snapshot_path {
             if current == &self.snapshot_path {
-                clear_stronghold_cache(persist).await?;
+                clear_stronghold_cache(persist, password).await?;
                 CURRENT_SNAPSHOT_PATH
                     .get_or_init(Default::default)
                     .lock()
@@ -417,7 +417,7 @@ async fn check_snapshot(
 }
 
 // saves the snapshot to the file system.
-async fn save_snapshot(stronghold: Stronghold, snapshot_path: String, key: Vec<u8>) -> Result<()> {
+async fn save_snapshot(stronghold: Stronghold, snapshot_path: PathBuf, key: Vec<u8>) -> Result<()> {
     stronghold.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key))?;
     Ok(()) 
 }
