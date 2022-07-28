@@ -255,7 +255,7 @@ impl Api {
             };
             if !is_password_empty && is_password_updated
             {
-                save_snapshot(stronghold, &self.snapshot_path, password).await?;
+                save_snapshot(stronghold, self.snapshot_path, password).await?;
             }
         }
         check_snapshot(
@@ -370,7 +370,7 @@ async fn get_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, 
   Ok(record.to_string())
 } 
 
-async fn save_record(view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<()> {
+async fn save_record(mut view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<()> {
     view.write(&key, vault, record, data.as_bytes(), record_hint)?;
     Ok(())
 }
