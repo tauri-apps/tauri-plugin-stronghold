@@ -188,22 +188,22 @@ fn hash_blake2b(input: String) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-async fn create_snapshot(snapshot_path: &str, client_path: &str, password: &str) -> Result<()> {
+async fn create_snapshot(snapshot_path: &str, client_path: &str, password: Vec<u8>) -> Result<()> {
     let stronghold = Stronghold::default();
     let snapshot_path = SnapshotPath::from_path(Path::new(snapshot_path));
-    let password_vec = password.as_bytes().to_vec();
-    let keyprovider = KeyProvider::try_from(password_vec).expect("");
+  //  let password_vec = password.as_bytes().to_vec();
+    let keyprovider = KeyProvider::try_from(password).expect("can not load password");
 
     stronghold.create_client(client_path)?;
     Ok(()) 
     }
 
-async fn read_snapshot(path: String, client_path: String, password: &str) -> Result<()> {
+async fn read_snapshot(path: String, client_path: String, password: Vec<u8>) -> Result<()> {
     let stronghold = Stronghold::default();
     let client_path = client_path.as_bytes().to_vec();
     let snapshot_path = SnapshotPath::from_path(path);
 
-    let keyprovider = KeyProvider::try_from(password).expect("");
+    let keyprovider = KeyProvider::try_from(password).expect("can not load password");
 
     let client = stronghold
         .load_client_from_snapshot(client_path, &keyprovider, &snapshot_path)?;
