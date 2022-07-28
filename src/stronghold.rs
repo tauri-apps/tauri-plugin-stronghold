@@ -367,7 +367,7 @@ async fn get_record(mut view: DbView<Provider>, key: Key<Provider>, vault: Vault
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
     record = from_utf8(&(*g.borrow())).unwrap().to_owned()
   });
-  Ok(record.to_string())
+  Ok(record)
 } 
 
 async fn save_record(mut view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<()> {
