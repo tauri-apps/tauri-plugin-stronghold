@@ -287,6 +287,38 @@ impl Api {
         Ok(())
     }
 
+    /// Gets the stronghold status for the given snapshot.
+    pub async fn get_status(&self) -> Status {
+        let password_clear_interval = *PASSWORD_CLEAR_INTERVAL
+            .get_or_init(|| Arc::new(Mutex::new(DEFAULT_PASSWORD_CLEAR_INTERVAL)))
+            .lock()
+            .await;
+        if let Some(access_instant) = STRONGHOLD_ACCESS_STORE
+            .get_or_init(Default::default)
+            .lock()
+            .await
+            .get(&self.snapshot_path)
+        {
+            let locked = password_clear_interval.as_millis() > 0
+                && access_instant.elapsed() >= password_clear_interval;
+            Status {
+                snapshot: if locked {
+                    SnapshotStatus::Locked
+                } else {
+                    SnapshotStatus::Unlocked(if password_clear_interval.as_millis() == 0 {
+                        password_clear_interval
+                    } else {
+                        password_clear_interval - access_instant.elapsed()
+                    })
+                },
+            }
+        } else {
+            Status {
+                snapshot: SnapshotStatus::Locked,
+            }
+        }
+    }
+
     pub async fn set_password(&self, password: Vec<u8>) {
         let mut passwords = PASSWORD_STORE
             .get_or_init(default_password_store)
