@@ -234,6 +234,7 @@ pub struct Api {
 
 impl Api {
     pub async fn load(&self, password: Vec<u8>) -> Result<()> {
+	let stronghold = Stronghold::default();
         if CURRENT_SNAPSHOT_PATH
             .get_or_init(Default::default)
             .lock()
@@ -254,7 +255,7 @@ impl Api {
             };
             if !is_password_empty && is_password_updated
             {
-                save_snapshot(&self.snapshot_path).await?;
+                save_snapshot(stronghold, &self.snapshot_path).await?;
             }
         }
         check_snapshot(
