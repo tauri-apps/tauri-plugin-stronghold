@@ -255,7 +255,7 @@ impl Api {
             };
             if !is_password_empty && is_password_updated
             {
-                save_snapshot(stronghold, self.snapshot_path, password.clone()).await?;
+                save_snapshot(stronghold, self.snapshot_path.clone(), password.clone()).await?;
             }
         }
         check_snapshot(
@@ -431,7 +431,7 @@ async fn clear_stronghold_cache(persist: bool, password: Vec<u8>) -> Result<()> 
         .as_ref()
     {
         if persist {
-            save_snapshot(stronghold, curr_snapshot_path, password).await?;
+            save_snapshot(stronghold, curr_snapshot_path.to_path_buf(), password).await?;
         } 
 	stronghold.reset();
     }
