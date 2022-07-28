@@ -418,7 +418,7 @@ async fn check_snapshot(
 
 // saves the snapshot to the file system.
 async fn save_snapshot(stronghold: Stronghold, snapshot_path: PathBuf, key: Vec<u8>) -> Result<()> {
-    stronghold.commit(&SnapshotPath::from_path(snapshot_path), &KeyProvider::try_from(key))?;
+    stronghold.commit(&SnapshotPath::from_path(snapshot_path), KeyProvider::try_from(key).unwrap())?;
     Ok(()) 
 }
 
@@ -431,7 +431,7 @@ async fn clear_stronghold_cache(persist: bool, password: Vec<u8>) -> Result<()> 
         .as_ref()
     {
         if persist {
-            save_snapshot(stronghold, curr_snapshot_path.to_path_buf(), password).await?;
+            save_snapshot(stronghold.clone(), curr_snapshot_path.to_path_buf(), password).await?;
         } 
 	stronghold.reset();
     }
