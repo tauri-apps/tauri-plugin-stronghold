@@ -363,11 +363,11 @@ pub async fn init(password: Key<Provider>, vaultId: VaultId) {
 }
 
 async fn get_record(mut view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String> {
-  let record;
+  let data;
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
-    record = from_utf8(&(*g.borrow())).unwrap().to_owned()
+    data = from_utf8(&(*g.borrow())).unwrap().to_owned()
   });
-  Ok(record)
+  Ok(data)
 } 
 
 async fn save_record(mut view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId, data: String,  record_hint: RecordHint) -> Result<()> {
