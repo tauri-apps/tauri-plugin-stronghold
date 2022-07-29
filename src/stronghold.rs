@@ -421,7 +421,7 @@ async fn save_snapshot(stronghold: Stronghold, snapshot_path: PathBuf, key: Vec<
     Ok(()) 
 }
 
-async fn clear_stronghold_cache(persist: bool, password: Vec<u8>) -> Result<()> {
+async fn clear_stronghold_cache(persist: bool) -> Result<()> {
     let stronghold = Stronghold::default();
     if let Some(curr_snapshot_path) = CURRENT_SNAPSHOT_PATH
         .get_or_init(Default::default)
@@ -430,7 +430,7 @@ async fn clear_stronghold_cache(persist: bool, password: Vec<u8>) -> Result<()> 
         .as_ref()
     {
         if persist {
-            save_snapshot(stronghold.clone(), curr_snapshot_path.to_path_buf(), password).await?;
+            save_snapshot(stronghold.clone(), curr_snapshot_path.to_path_buf()).await?;
         } 
 	stronghold.reset();
     }
