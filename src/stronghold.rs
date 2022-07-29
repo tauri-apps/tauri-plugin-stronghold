@@ -449,3 +449,31 @@ async fn switch_snapshot(snapshot_path: &Path) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    #[async_std::test]
+    async fn write_and_read() -> super::Result<()> {
+        let snapshot_path: String = std::iter::repeat(())
+            .map(|()| thread_rng().sample(Alphanumeric))
+            .map(char::from)
+            .take(10)
+            .collect();
+        std::fs::create_dir_all("./test-storage").unwrap();
+        let snapshot_path = PathBuf::from(format!("./test-storage/{}.stronghold", snapshot_path));
+
+        let api = super::Api::new(&snapshot_path);
+        api.load([0; 32].to_vec()).await.unwrap();
+        let store = api.get_store("", vec![]);
+
+        let id = "writeandreadtest".to_string();
+        let data = "account data";
+        store
+            .save_record(get_location(&id), data.to_string(), None)
+            .await?;
+        let stored_data = store.get_record(get_location(&id)).await?;
+        assert_eq!(stored_data, data);
+
+        Ok(())
+    }
+}
