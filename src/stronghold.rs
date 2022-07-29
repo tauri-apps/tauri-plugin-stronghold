@@ -400,10 +400,8 @@ async fn check_snapshot(
             switch_snapshot(snapshot_path).await?;
         }
         if snapshot_path.exists() {
-            if let Some(client_path) {
-                // reload a client to check if the password is correct
-		read_snasphot(snapshot_path, client_path, password )?;
-            }
+            // reload a client to check if the password is correct
+	    read_snasphot(snapshot_path, client_path, password )?;
         }
     } else {
         CURRENT_SNAPSHOT_PATH
