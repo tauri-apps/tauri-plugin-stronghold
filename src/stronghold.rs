@@ -164,7 +164,7 @@ fn default_password_store() -> Arc<Mutex<HashMap<PathBuf, Arc<Password>>>> {
                     passwords.remove(&snapshot_path);
                     if let Some(curr_snapshot_path) = current_snapshot_path {
                         if &snapshot_path == curr_snapshot_path {                        
-                            let _ = clear_stronghold_cache(true, passwords);
+                            let _ = clear_stronghold_cache(true);
                         }
                     }
                     emit_status_change(
@@ -276,7 +276,7 @@ impl Api {
             .clone();
         if let Some(current) = &current_snapshot_path {
             if current == &self.snapshot_path {
-                clear_stronghold_cache(persist, password).await?;
+                clear_stronghold_cache(persist).await?;
                 CURRENT_SNAPSHOT_PATH
                     .get_or_init(Default::default)
                     .lock()
@@ -363,7 +363,7 @@ pub async fn init(password: Key<Provider>, vaultId: VaultId) {
 }
 
 async fn get_record(mut view: DbView<Provider>, key: Key<Provider>, vault: VaultId, record: RecordId) -> Result<String> {
-  let data;
+  let mut data;
   view.get_guard::<Infallible, _>(&key, vault, record, |g| {
     data = from_utf8(&(*g.borrow())).unwrap();
     Ok(())
@@ -402,7 +402,7 @@ async fn check_snapshot(
         }
         if snapshot_path.exists() {
             // reload a client to check if the password is correct
-	    read_snasphot(snapshot_path, client_path, password )?;
+	    read_snaphot(snapshot_path, client_path, password )?;
         }
     } else {
         CURRENT_SNAPSHOT_PATH
