@@ -402,7 +402,7 @@ async fn check_snapshot(
         }
         if snapshot_path.exists() {
             // reload a client to check if the password is correct
-	    read_snaphot(snapshot_path, client_path, password )?;
+	    read_snapshot(snapshot_path, client_path, password)?;
         }
     } else {
         CURRENT_SNAPSHOT_PATH
