@@ -20,7 +20,7 @@ serde_json = "1.0"
 async-std = { version = "1.10", features = ["attributes"] }
 slog = "2.7"
 hex = "0.4"
-zeroize = { version = "1.4", features = ["zeroize_derive"] }
+zeroize = { version = "1.5", features = ["zeroize_derive"] }
 
 [dev-dependencies]
 rand = "0.8"
