@@ -1,49 +1,5 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import { listen } from '@tauri-apps/api/event';
 
-var RelayDirection;
-(function (RelayDirection) {
-    RelayDirection[RelayDirection["Dialing"] = 0] = "Dialing";
-    RelayDirection[RelayDirection["Listening"] = 1] = "Listening";
-    RelayDirection[RelayDirection["Both"] = 2] = "Both";
-})(RelayDirection || (RelayDirection = {}));
-var RequestPermission;
-(function (RequestPermission) {
-    RequestPermission[RequestPermission["CheckVault"] = 0] = "CheckVault";
-    RequestPermission[RequestPermission["CheckRecord"] = 1] = "CheckRecord";
-    RequestPermission[RequestPermission["WriteToStore"] = 2] = "WriteToStore";
-    RequestPermission[RequestPermission["ReadFromStore"] = 3] = "ReadFromStore";
-    RequestPermission[RequestPermission["DeleteFromStore"] = 4] = "DeleteFromStore";
-    RequestPermission[RequestPermission["CreateNewVault"] = 5] = "CreateNewVault";
-    RequestPermission[RequestPermission["WriteToVault"] = 6] = "WriteToVault";
-    RequestPermission[RequestPermission["RevokeData"] = 7] = "RevokeData";
-    RequestPermission[RequestPermission["GarbageCollect"] = 8] = "GarbageCollect";
-    RequestPermission[RequestPermission["ListIds"] = 9] = "ListIds";
-    RequestPermission[RequestPermission["ReadSnapshot"] = 10] = "ReadSnapshot";
-    RequestPermission[RequestPermission["WriteSnapshot"] = 11] = "WriteSnapshot";
-    RequestPermission[RequestPermission["FillSnapshot"] = 12] = "FillSnapshot";
-    RequestPermission[RequestPermission["ClearCache"] = 13] = "ClearCache";
-    RequestPermission[RequestPermission["ControlRequest"] = 14] = "ControlRequest";
-})(RequestPermission || (RequestPermission = {}));
-const statusChangeListeners = {};
-listen('stronghold://status-change', event => {
-    const { snapshotPath, status } = event.payload;
-    for (const listener of (statusChangeListeners[snapshotPath] || [])) {
-        listener.cb(status);
-    }
-});
-function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-        .toString(16)
-        .substring(1);
-}
-function uid() {
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-        s4() + '-' + s4() + s4() + s4();
-}
-var StrongholdFlag;
-(function (StrongholdFlag) {
-})(StrongholdFlag || (StrongholdFlag = {}));
 class Location {
     constructor(type, payload) {
         this.type = type;
@@ -68,25 +24,23 @@ function setPasswordClearInterval(interval) {
     });
 }
 class ProcedureExecutor {
-    constructor(isRemote, procedureArgs) {
+    constructor(procedureArgs) {
         this.procedureArgs = procedureArgs;
-        this.command = isRemote ? 'execute_remote_procedure' : 'execute_procedure';
     }
-    generateSLIP10Seed(outputLocation, sizeBytes, hint) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+    generateSLIP10Seed(outputLocation, sizeBytes) {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
                 type: 'SLIP10Generate',
                 payload: {
                     output: outputLocation,
                     sizeBytes,
-                    hint
                 }
             }
         });
     }
-    deriveSLIP10(chain, source, sourceLocation, outputLocation, hint) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+    deriveSLIP10(chain, source, sourceLocation, outputLocation) {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
                 type: 'SLIP10Derive',
@@ -97,13 +51,12 @@ class ProcedureExecutor {
                         payload: sourceLocation
                     },
                     output: outputLocation,
-                    hint
                 }
             }
         });
     }
-    recoverBIP39(mnemonic, outputLocation, passphrase, hint) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+    recoverBIP39(mnemonic, outputLocation, passphrase) {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
                 type: 'BIP39Recover',
@@ -111,37 +64,36 @@ class ProcedureExecutor {
                     mnemonic,
                     passphrase,
                     output: outputLocation,
-                    hint
                 }
             }
         });
     }
-    generateBIP39(outputLocation, passphrase, hint) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+    generateBIP39(outputLocation, passphrase) {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
                 type: 'BIP39Generate',
                 payload: {
                     output: outputLocation,
                     passphrase,
-                    hint
                 }
             }
         });
     }
-    getPublicKey(privateKeyLocation) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+    getEd25519PublicKey(privateKeyLocation) {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
-                type: 'Ed25519PublicKey',
+                type: 'PublicKey',
                 payload: {
+                    type: 'Ed25519',
                     privateKey: privateKeyLocation
                 }
             }
         });
     }
     sign(privateKeyLocation, msg) {
-        return invoke(`plugin:stronghold|${this.command}`, {
+        return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
                 type: 'Ed25519Sign',
@@ -153,108 +105,73 @@ class ProcedureExecutor {
         });
     }
 }
-class RemoteStore {
-    constructor(path, peerId) {
+class Client {
+    constructor(path, name) {
         this.path = path;
-        this.peerId = peerId;
+        this.name = name;
     }
-    get(location) {
-        return invoke('plugin:stronghold|get_remote_store_record', {
-            snapshotPath: this.path,
-            peerId: this.peerId,
-            location
-        });
+    getVault(name) {
+        return new Vault(this.path, this.name, name);
     }
-    insert(location, record, lifetime) {
-        return invoke('plugin:stronghold|save_remote_store_record', {
-            snapshotPath: this.path,
-            peerId: this.peerId,
-            location,
-            record,
-            lifetime
-        });
-    }
-}
-class RemoteVault extends ProcedureExecutor {
-    constructor(path, peerId) {
-        super(true, {
-            peerId
-        });
-        this.path = path;
-        this.peerId = peerId;
+    getStore() {
+        return new Store(this.path, this.name);
     }
 }
 class Store {
-    constructor(path, name, flags) {
+    constructor(path, client) {
         this.path = path;
-        this.name = name;
-        this.flags = flags;
+        this.client = client;
     }
-    get vault() {
-        return {
-            name: this.name,
-            flags: this.flags
-        };
-    }
-    get(location) {
+    get(key) {
         return invoke('plugin:stronghold|get_store_record', {
             snapshotPath: this.path,
-            vault: this.vault,
-            location
+            client: this.client,
+            key
         });
     }
-    insert(location, record, lifetime) {
+    insert(key, value, lifetime) {
         return invoke('plugin:stronghold|save_store_record', {
             snapshotPath: this.path,
-            vault: this.vault,
-            location,
-            record,
+            client: this.client,
+            key,
+            value,
             lifetime
         });
     }
-    remove(location) {
+    remove(key) {
         return invoke('plugin:stronghold|remove_store_record', {
             snapshotPath: this.path,
-            vault: this.vault,
-            location
+            client: this.client,
+            key
         });
     }
 }
 class Vault extends ProcedureExecutor {
-    constructor(path, name, flags) {
-        super(false, {
+    constructor(path, client, name) {
+        super({
             snapshotPath: path,
-            vault: {
-                name,
-                flags
-            }
+            client,
+            vault: name,
         });
         this.path = path;
+        this.client = client;
         this.name = name;
-        this.flags = flags;
     }
-    get vault() {
-        return {
-            name: this.name,
-            flags: this.flags
-        };
-    }
-    insert(location, record, recordHint) {
-        return invoke('plugin:stronghold|save_record', {
+    insert(key, secret) {
+        return invoke('plugin:stronghold|save_secret', {
             snapshotPath: this.path,
-            vault: this.vault,
-            location,
-            record,
-            recordHint,
-            flags: []
+            client: this.client,
+            vault: this.name,
+            recordPath: key,
+            secret,
         });
     }
-    remove(location, gc = true) {
-        return invoke('plugin:stronghold|remove_record', {
+    remove(location) {
+        return invoke('plugin:stronghold|remove_secret', {
             snapshotPath: this.path,
-            vault: this.vault,
+            client: this.client,
+            vault: this.name,
             location,
-            gc
         });
     }
 }
@@ -262,82 +179,34 @@ class Communication {
     constructor(path) {
         this.path = path;
     }
+    connect(peer) {
+        return invoke('plugin:stronghold|p2p_connect', {
+            snapshotPath: this.path,
+            peer
+        });
+    }
     stop() {
-        return invoke('plugin:stronghold|stop_communication', {
+        return invoke('plugin:stronghold|p2p_stop', {
             snapshotPath: this.path
         });
     }
     startListening(addr) {
-        return invoke('plugin:stronghold|start_listening', {
+        return invoke('plugin:stronghold|p2p_start_listening', {
             snapshotPath: this.path,
             addr
         });
     }
-    getSwarmInfo() {
-        return invoke('plugin:stronghold|get_swarm_info', { snapshotPath: this.path });
+    stopListening() {
+        return invoke('plugin:stronghold|p2p_stop_listening', {
+            snapshotPath: this.path,
+        });
     }
-    addPeer(peerId, addr, relayDirection) {
-        return invoke('plugin:stronghold|add_peer', {
+    addPeerAddr(peerId, addr) {
+        return invoke('plugin:stronghold|p2p_add_peer', {
             snapshotPath: this.path,
             peerId,
-            addr,
-            relayDirection: relayDirection ? { type: RelayDirection[relayDirection] } : null
+            addr
         });
-    }
-    changeRelayDirection(peerId, relayDirection) {
-        return invoke('plugin:stronghold|change_relay_direction', {
-            snapshotPath: this.path,
-            peerId,
-            relayDirection: { type: RelayDirection[relayDirection] }
-        });
-    }
-    removeRelay(peerId) {
-        return invoke('plugin:stronghold|remove_relay', {
-            snapshotPath: this.path,
-            peerId
-        });
-    }
-    allowAllRequests(peers, setDefault = false) {
-        return invoke('plugin:stronghold|allow_all_requests', {
-            snapshotPath: this.path,
-            peers,
-            setDefault
-        });
-    }
-    rejectAllRequests(peers, setDefault = false) {
-        return invoke('plugin:stronghold|reject_all_requests', {
-            snapshotPath: this.path,
-            peers,
-            setDefault
-        });
-    }
-    allowRequests(peers, permissions, changeDefault = false) {
-        return invoke('plugin:stronghold|allow_requests', {
-            snapshotPath: this.path,
-            peers,
-            requests: permissions.map(p => ({ type: RequestPermission[p] })),
-            changeDefault
-        });
-    }
-    rejectRequests(peers, permissions, changeDefault = false) {
-        return invoke('plugin:stronghold|reject_requests', {
-            snapshotPath: this.path,
-            peers,
-            requests: permissions.map(p => ({ type: RequestPermission[p] })),
-            changeDefault
-        });
-    }
-    removeFirewallRules(peers) {
-        return invoke('plugin:stronghold|remove_firewall_rules', {
-            snapshotPath: this.path,
-            peers
-        });
-    }
-    getRemoteVault(peerId) {
-        return new RemoteVault(this.path, peerId);
-    }
-    getRemoteStore(peerId) {
-        return new RemoteStore(this.path, peerId);
     }
 }
 class Stronghold {
@@ -346,7 +215,7 @@ class Stronghold {
         this.reload(password);
     }
     reload(password) {
-        return invoke('plugin:stronghold|init', {
+        return invoke('plugin:stronghold|initialize', {
             snapshotPath: this.path,
             password
         });
@@ -356,40 +225,31 @@ class Stronghold {
             snapshotPath: this.path
         });
     }
-    getVault(name, flags) {
-        return new Vault(this.path, name, flags);
+    loadClient(client) {
+        return invoke('plugin:stronghold|load_client', {
+            snapshotPath: this.path,
+            client
+        }).then(() => new Client(this.path, client));
     }
-    getStore(name, flags) {
-        return new Store(this.path, name, flags);
+    createClient(client) {
+        return invoke('plugin:stronghold|create_client', {
+            snapshotPath: this.path,
+            client
+        }).then(() => new Client(this.path, client));
     }
     save() {
-        return invoke('plugin:stronghold|save_snapshot', {
+        return invoke('plugin:stronghold|save', {
             snapshotPath: this.path
         });
     }
-    getStatus() {
-        return invoke('plugin:stronghold|get_status', {
-            snapshotPath: this.path
-        });
-    }
-    onStatusChange(cb) {
-        if (statusChangeListeners[this.path] === void 0) {
-            statusChangeListeners[this.path] = [];
-        }
-        const id = uid();
-        statusChangeListeners[this.path].push({
-            id,
-            cb
-        });
-        return () => {
-            statusChangeListeners[this.path] = statusChangeListeners[this.path].filter(listener => listener.id !== id);
-        };
-    }
-    spawnCommunication() {
-        return invoke('plugin:stronghold|spawn_communication', {
-            snapshotPath: this.path
+    spawnCommunication(client, config, keypair) {
+        return invoke('plugin:stronghold|p2p_spawn', {
+            snapshotPath: this.path,
+            client,
+            config,
+            keypair
         }).then(() => new Communication(this.path));
     }
 }
 
-export { Communication, Location, RelayDirection, RemoteStore, RemoteVault, RequestPermission, Store, Stronghold, StrongholdFlag, Vault, setPasswordClearInterval };
+export { Client, Communication, Location, Store, Stronghold, Vault, setPasswordClearInterval };

@@ -33,20 +33,19 @@ For more details and usage see [the svelte demo](examples/svelte-app/src/App.sve
 git = "https://github.com/tauri-apps/tauri-plugin-stronghold"
 tag = "v0.1.0"
 #branch = "main"
-
-# temporary fix to version resolution
-[patch.crates-io]
-aesni = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
-aes-soft = { git = "https://github.com/RustCrypto/block-ciphers/", rev = "268dadc93df08928de3bc510ddf20aabfcc49435" }
 ```
 
 Use in `src-tauri/src/main.rs`:
 ```rust
-use tauri_plugin_stronghold::TauriStronghold;
-
 fn main() {
     tauri::Builder::default()
-        .plugin(TauriStronghold {})
+        .plugin(
+          tauri_plugin_stronghold::Builder::new(|password| {
+            // TODO: hash the password here with e.g. argon2, blake2b or any other secure algorithm
+            unimplemented!()
+          })
+          .build()
+        )
         .build()
         .run();
 }
@@ -70,7 +69,7 @@ yarn add github:tauri-apps/tauri-plugin-stronghold#6749525a47a95439c9703d3a49b94
 `package.json`
 ```json
   "dependencies": {
-    "tauri-plugin-stronghold-api": "github:tauri-apps/tauri-plugin-stronghold#v0.2.0",
+    "tauri-plugin-stronghold-api": "github:tauri-apps/tauri-plugin-stronghold#v0.1.0",
 ```
 
 Use within your JS/TS:
