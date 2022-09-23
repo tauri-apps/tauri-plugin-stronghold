@@ -28,7 +28,7 @@ declare class ProcedureExecutor {
     recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string): Promise<void>;
     generateBIP39(outputLocation: Location, passphrase?: string): Promise<void>;
     getEd25519PublicKey(privateKeyLocation: Location): Promise<string>;
-    sign(privateKeyLocation: Location, msg: string): Promise<string>;
+    signEd25519(privateKeyLocation: Location, msg: string): Promise<string>;
 }
 export declare class Client {
     path: string;
@@ -57,6 +57,23 @@ export declare class Communication {
     path: string;
     constructor(path: string);
     connect(peer: string): Promise<string>;
+    serve(): Promise<void>;
+    private send;
+    getSnapshotHierarchy(peer: string, client: string): Promise<void>;
+    checkVault(peer: string, client: string, vault: string): Promise<boolean>;
+    checkRecord(peer: string, client: string, location: Location): Promise<boolean>;
+    writeToVault(peer: string, client: string, location: Location, payload: number[]): Promise<void>;
+    revokeData(peer: string, client: string, location: Location): Promise<void>;
+    deleteData(peer: string, client: string, location: Location): Promise<void>;
+    readFromStore(peer: string, client: string, key: string): Promise<number[]>;
+    writeToStore(peer: string, client: string, key: string, payload: number[], lifetime?: Duration): Promise<void>;
+    deleteFromStore(peer: string, client: string, key: string): Promise<void>;
+    generateSLIP10Seed(peer: string, client: string, outputLocation: Location, sizeBytes?: number): Promise<void>;
+    deriveSLIP10(peer: string, client: string, chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<string>;
+    recoverBIP39(peer: string, client: string, mnemonic: string, outputLocation: Location, passphrase?: string): Promise<void>;
+    generateBIP39(peer: string, client: string, outputLocation: Location, passphrase?: string): Promise<void>;
+    getEd25519PublicKey(peer: string, client: string, privateKeyLocation: Location): Promise<string>;
+    signEd25519(peer: string, client: string, privateKeyLocation: Location, msg: string): Promise<string>;
     stop(): Promise<void>;
     startListening(addr?: string): Promise<string>;
     stopListening(): Promise<string>;

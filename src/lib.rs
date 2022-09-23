@@ -430,7 +430,8 @@ impl Builder {
             p2p::p2p_start_listening,
             p2p::p2p_stop_listening,
             p2p::p2p_add_peer_addr,
-            p2p::p2p_connect
+            p2p::p2p_connect,
+            p2p::p2p_send
         ]);
 
         PluginBuilder::new("stronghold")

@@ -1,6 +1,7 @@
 use iota_stronghold::network_old::{
-    ClientAccess as StrongholdClientAccess, NetworkConfig as StrongholdNetworkConfig,
-    Permissions as StrongholdPermissions,
+    ClientAccess as StrongholdClientAccess, ClientRequest as StrongholdClientRequest,
+    NetworkConfig as StrongholdNetworkConfig, Permissions as StrongholdPermissions,
+    SnapshotRequest as StrongholdSnapshotRequest, StrongholdRequest,
 };
 use libp2p::{Multiaddr, PeerId};
 use serde::{Deserialize, Serialize, Serializer};
@@ -9,7 +10,7 @@ use tauri::State;
 
 use std::{collections::HashMap, path::PathBuf, str::FromStr, time::Duration};
 
-use crate::{BytesDto, LocationDto, StrongholdCollection};
+use crate::{BytesDto, LocationDto, ProcedureDto, StrongholdCollection};
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -40,7 +41,7 @@ impl Serialize for Error {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ConnectionLimits {
+pub(crate) struct ConnectionLimits {
     max_pending_incoming: Option<u32>,
     max_pending_outgoing: Option<u32>,
     max_established_incoming: Option<u32>,
@@ -76,7 +77,7 @@ impl From<ConnectionLimits> for StrongholdConnectionLimits {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ClientAccess {
+pub(crate) struct ClientAccess {
     use_vault_default: bool,
     use_vault_exceptions: HashMap<Vec<u8>, bool>,
     write_vault_default: bool,
@@ -122,7 +123,7 @@ impl From<ClientAccess> for StrongholdClientAccess {
 }
 
 #[derive(Default, Deserialize)]
-pub struct Permissions {
+pub(crate) struct Permissions {
     default: ClientAccess,
     exceptions: HashMap<Vec<u8>, ClientAccess>,
 }
@@ -139,7 +140,7 @@ impl From<Permissions> for StrongholdPermissions {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NetworkConfig {
+pub(crate) struct NetworkConfig {
     request_timeout: Option<Duration>,
     connection_timeout: Option<Duration>,
     connections_limit: Option<ConnectionLimits>,
@@ -194,6 +195,123 @@ impl From<NetworkConfig> for StrongholdNetworkConfig {
         }
 
         conf
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", content = "payload")]
+pub(crate) enum ClientRequest {
+    CheckVault {
+        #[serde(rename = "vaultPath")]
+        vault_path: BytesDto,
+    },
+    CheckRecord {
+        location: LocationDto,
+    },
+    WriteToVault {
+        location: LocationDto,
+        payload: Vec<u8>,
+    },
+    RevokeData {
+        location: LocationDto,
+    },
+    DeleteData {
+        location: LocationDto,
+    },
+    ReadFromStore {
+        key: BytesDto,
+    },
+    WriteToStore {
+        key: BytesDto,
+        payload: Vec<u8>,
+        lifetime: Option<Duration>,
+    },
+    DeleteFromStore {
+        key: BytesDto,
+    },
+    Procedures {
+        procedures: Vec<ProcedureDto>,
+    },
+}
+
+impl From<ClientRequest> for StrongholdClientRequest {
+    fn from(r: ClientRequest) -> Self {
+        match r {
+            ClientRequest::CheckVault { vault_path } => Self::CheckVault {
+                vault_path: vault_path.into(),
+            },
+            ClientRequest::CheckRecord { location } => Self::CheckRecord {
+                location: location.into(),
+            },
+            ClientRequest::WriteToVault { location, payload } => Self::WriteToVault {
+                location: location.into(),
+                payload,
+            },
+            ClientRequest::RevokeData { location } => Self::RevokeData {
+                location: location.into(),
+            },
+            ClientRequest::DeleteData { location } => Self::DeleteData {
+                location: location.into(),
+            },
+            ClientRequest::ReadFromStore { key } => Self::ReadFromStore { key: key.into() },
+            ClientRequest::WriteToStore {
+                key,
+                payload,
+                lifetime,
+            } => Self::WriteToStore {
+                key: key.into(),
+                payload,
+                lifetime,
+            },
+            ClientRequest::DeleteFromStore { key } => Self::DeleteFromStore { key: key.into() },
+            ClientRequest::Procedures { procedures } => Self::Procedures {
+                procedures: procedures.into_iter().map(Into::into).collect(),
+            },
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", content = "payload")]
+pub(crate) enum SnapshotRequest {
+    GetRemoteHierarchy,
+}
+
+impl From<SnapshotRequest> for StrongholdSnapshotRequest {
+    fn from(r: SnapshotRequest) -> Self {
+        match r {
+            SnapshotRequest::GetRemoteHierarchy => Self::GetRemoteHierarchy,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", content = "payload")]
+pub(crate) enum Request {
+    ClientRequest {
+        #[serde(rename = "clientPath")]
+        client_path: BytesDto,
+        request: ClientRequest,
+    },
+    SnapshotRequest {
+        request: SnapshotRequest,
+    },
+}
+
+impl From<Request> for StrongholdRequest {
+    fn from(r: Request) -> Self {
+        match r {
+            Request::ClientRequest {
+                client_path,
+                request,
+            } => Self::ClientRequest {
+                client_path: client_path.into(),
+                request: request.into(),
+            },
+            Request::SnapshotRequest { request } => Self::SnapshotRequest {
+                request: request.into(),
+            },
+        }
     }
 }
 
@@ -300,7 +418,24 @@ pub(crate) async fn p2p_connect(
         .map_err(Into::into)
 }
 
-// TODO: add send
+#[tauri::command]
+pub(crate) async fn p2p_send(
+    collection: State<'_, StrongholdCollection>,
+    snapshot_path: PathBuf,
+    peer: String,
+    client: BytesDto,
+    request: Request,
+) -> Result<()> {
+    let stronghold = get_stronghold(collection, snapshot_path)?;
+    stronghold
+        .send(
+            PeerId::from_str(&peer).map_err(|_e| Error::InvalidPeer)?,
+            client,
+            request,
+        )
+        .await?;
+    Ok(())
+}
 
 fn get_stronghold(
     collection: State<'_, StrongholdCollection>,

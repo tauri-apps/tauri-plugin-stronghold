@@ -115,7 +115,7 @@ class ProcedureExecutor {
     })
   }
 
-  sign(privateKeyLocation: Location, msg: string): Promise<string> {
+  signEd25519(privateKeyLocation: Location, msg: string): Promise<string> {
     return invoke(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
@@ -233,6 +233,271 @@ export class Communication {
     })
   }
 
+  serve(): Promise<void> {
+    return invoke('plugin:stronghold|p2p_serve', {
+      snapshotPath: this.path
+    })
+  }
+
+  private send<T>(peer: string, client: string, request: any): Promise<T> {
+    return invoke('plugin:stronghold|p2p_send', {
+      snapshotPath: this.path,
+      peer,
+      client,
+      request,
+    })
+  }
+
+  getSnapshotHierarchy(peer: string, client: string): Promise<void> {
+    return this.send(peer, client, {
+      type: 'SnapshotRequest',
+      payload: {
+        request: {
+          type: 'GetRemoteHierarchy'
+        }
+      }
+    })
+  }
+
+  checkVault(peer: string, client: string, vault: string): Promise<boolean> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'CheckVault',
+          payload: {
+            vaultPath: vault
+          }
+        }
+      }
+    })
+  }
+
+  checkRecord(peer: string, client: string, location: Location): Promise<boolean> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'CheckRecord',
+          payload: {
+            location
+          }
+        }
+      }
+    })
+  }
+
+  writeToVault(peer: string, client: string, location: Location, payload: number[]): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'WriteToVault',
+          payload: {
+            location,
+            payload
+          }
+        }
+      }
+    })
+  }
+
+  revokeData(peer: string, client: string, location: Location): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'RevokeData',
+          payload: {
+            location,
+          }
+        }
+      }
+    })
+  }
+
+  deleteData(peer: string, client: string, location: Location): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'DeleteData',
+          payload: {
+            location,
+          }
+        }
+      }
+    })
+  }
+
+  readFromStore(peer: string, client: string, key: string): Promise<number[]> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'ReadFromStore',
+          payload: {
+            key,
+          }
+        }
+      }
+    })
+  }
+
+  writeToStore(peer: string, client: string, key: string, payload: number[], lifetime?: Duration): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'WriteToStore',
+          payload: {
+            key,
+            payload,
+            lifetime
+          }
+        }
+      }
+    })
+  }
+
+  deleteFromStore(peer: string, client: string, key: string): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'DeleteFromStore',
+          payload: {
+            key,
+          }
+        }
+      }
+    })
+  }
+
+  generateSLIP10Seed(peer: string, client: string, outputLocation: Location, sizeBytes?: number): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'SLIP10Generate',
+              payload: {
+                output: outputLocation,
+                sizeBytes,
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
+
+  deriveSLIP10(peer: string, client: string, chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<string> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'SLIP10Derive',
+              payload: {
+                chain,
+                input: {
+                  type: source,
+                  payload: sourceLocation
+                },
+                output: outputLocation,
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
+
+  recoverBIP39(peer: string, client: string, mnemonic: string, outputLocation: Location, passphrase?: string): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'BIP39Recover',
+              payload: {
+                mnemonic,
+                passphrase,
+                output: outputLocation,
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
+
+  generateBIP39(peer: string, client: string, outputLocation: Location, passphrase?: string): Promise<void> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'BIP39Generate',
+              payload: {
+                output: outputLocation,
+                passphrase,
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
+
+  getEd25519PublicKey(peer: string, client: string, privateKeyLocation: Location): Promise<string> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'PublicKey',
+              payload: {
+                type: 'Ed25519',
+                privateKey: privateKeyLocation
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
+
+  signEd25519(peer: string, client: string, privateKeyLocation: Location, msg: string): Promise<string> {
+    return this.send(peer, client, {
+      type: 'ClientRequest',
+      payload: {
+        request: {
+          type: 'Procedures',
+          payload: {
+            procedures: [{
+              type: 'Ed25519Sign',
+              payload: {
+                privateKey: privateKeyLocation,
+                msg
+              }
+            }],
+          }
+        }
+      }
+    })
+  }
 
   stop(): Promise<void> {
     return invoke('plugin:stronghold|p2p_stop', {

@@ -92,7 +92,7 @@ class ProcedureExecutor {
             }
         });
     }
-    sign(privateKeyLocation, msg) {
+    signEd25519(privateKeyLocation, msg) {
         return invoke(`plugin:stronghold|execute_procedure`, {
             ...this.procedureArgs,
             procedure: {
@@ -183,6 +183,255 @@ class Communication {
         return invoke('plugin:stronghold|p2p_connect', {
             snapshotPath: this.path,
             peer
+        });
+    }
+    serve() {
+        return invoke('plugin:stronghold|p2p_serve', {
+            snapshotPath: this.path
+        });
+    }
+    send(peer, client, request) {
+        return invoke('plugin:stronghold|p2p_send', {
+            snapshotPath: this.path,
+            peer,
+            client,
+            request,
+        });
+    }
+    getSnapshotHierarchy(peer, client) {
+        return this.send(peer, client, {
+            type: 'SnapshotRequest',
+            payload: {
+                request: {
+                    type: 'GetRemoteHierarchy'
+                }
+            }
+        });
+    }
+    checkVault(peer, client, vault) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'CheckVault',
+                    payload: {
+                        vaultPath: vault
+                    }
+                }
+            }
+        });
+    }
+    checkRecord(peer, client, location) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'CheckRecord',
+                    payload: {
+                        location
+                    }
+                }
+            }
+        });
+    }
+    writeToVault(peer, client, location, payload) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'WriteToVault',
+                    payload: {
+                        location,
+                        payload
+                    }
+                }
+            }
+        });
+    }
+    revokeData(peer, client, location) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'RevokeData',
+                    payload: {
+                        location,
+                    }
+                }
+            }
+        });
+    }
+    deleteData(peer, client, location) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'DeleteData',
+                    payload: {
+                        location,
+                    }
+                }
+            }
+        });
+    }
+    readFromStore(peer, client, key) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'ReadFromStore',
+                    payload: {
+                        key,
+                    }
+                }
+            }
+        });
+    }
+    writeToStore(peer, client, key, payload, lifetime) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'WriteToStore',
+                    payload: {
+                        key,
+                        payload,
+                        lifetime
+                    }
+                }
+            }
+        });
+    }
+    deleteFromStore(peer, client, key) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'DeleteFromStore',
+                    payload: {
+                        key,
+                    }
+                }
+            }
+        });
+    }
+    generateSLIP10Seed(peer, client, outputLocation, sizeBytes) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'SLIP10Generate',
+                                payload: {
+                                    output: outputLocation,
+                                    sizeBytes,
+                                }
+                            }],
+                    }
+                }
+            }
+        });
+    }
+    deriveSLIP10(peer, client, chain, source, sourceLocation, outputLocation) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'SLIP10Derive',
+                                payload: {
+                                    chain,
+                                    input: {
+                                        type: source,
+                                        payload: sourceLocation
+                                    },
+                                    output: outputLocation,
+                                }
+                            }],
+                    }
+                }
+            }
+        });
+    }
+    recoverBIP39(peer, client, mnemonic, outputLocation, passphrase) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'BIP39Recover',
+                                payload: {
+                                    mnemonic,
+                                    passphrase,
+                                    output: outputLocation,
+                                }
+                            }],
+                    }
+                }
+            }
+        });
+    }
+    generateBIP39(peer, client, outputLocation, passphrase) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'BIP39Generate',
+                                payload: {
+                                    output: outputLocation,
+                                    passphrase,
+                                }
+                            }],
+                    }
+                }
+            }
+        });
+    }
+    getEd25519PublicKey(peer, client, privateKeyLocation) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'PublicKey',
+                                payload: {
+                                    type: 'Ed25519',
+                                    privateKey: privateKeyLocation
+                                }
+                            }],
+                    }
+                }
+            }
+        });
+    }
+    signEd25519(peer, client, privateKeyLocation, msg) {
+        return this.send(peer, client, {
+            type: 'ClientRequest',
+            payload: {
+                request: {
+                    type: 'Procedures',
+                    payload: {
+                        procedures: [{
+                                type: 'Ed25519Sign',
+                                payload: {
+                                    privateKey: privateKeyLocation,
+                                    msg
+                                }
+                            }],
+                    }
+                }
+            }
         });
     }
     stop() {
