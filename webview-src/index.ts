@@ -1,7 +1,52 @@
 import { invoke } from '@tauri-apps/api/tauri'
 
-// TODO
-export interface NetworkConfig { }
+export type VaultPath = string | number[]
+
+export interface ConnectionLimits {
+  maxPendingIncoming?: number
+  maxPendingOutgoing?: number
+  maxEstablishedIncoming?: number
+  maxEstablishedOutgoing?: number
+  maxEstablishedPerPeer?: number
+  maxEstablishedTotal?: number
+}
+
+export interface PeerAddress {
+  known: string[] // multiaddr
+  use_relay_fallback: boolean
+}
+
+export interface AddressInfo {
+  peers: Map<string, PeerAddress>
+  relays: string[] // peers
+}
+
+export interface ClientAccess {
+  useVaultDefault?: boolean
+  useVaultExceptions?: Map<VaultPath, boolean>
+  writeVaultDefault?: boolean
+  writeVaultExceptions?: Map<VaultPath, boolean>
+  cloneVaultDefault?: boolean
+  cloneVaultExceptions?: Map<VaultPath, boolean>
+  readStore?: boolean
+  writeStore?: boolean
+}
+
+export interface Permissions {
+  default?: ClientAccess
+  exceptions?: Map<VaultPath, ClientAccess>
+}
+
+export interface NetworkConfig {
+  requestTimeout?: Duration
+  connectionTimeout?: Duration
+  connectionsLimit?: ConnectionLimits
+  enableMdns?: boolean
+  enableRelay?: boolean
+  addresses?: AddressInfo
+  peerPermissions?: Map<string, Permissions>
+  permissionsDefault?: Permissions
+}
 
 export interface Duration {
   millis: number

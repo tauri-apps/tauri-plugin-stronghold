@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use stronghold_p2p::{AddressInfo, ConnectionLimits as StrongholdConnectionLimits};
 use tauri::State;
 
-use std::{collections::HashMap, path::PathBuf, str::FromStr, time::Duration};
+use std::{collections::HashMap, path::PathBuf, time::Duration};
 
 use crate::{BytesDto, LocationDto, ProcedureDto, StrongholdCollection};
 
@@ -16,8 +16,6 @@ type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("peer is invalid")]
-    InvalidPeer,
     #[error("stronghold not initialized")]
     StrongholdNotInitialized,
     #[error(transparent)]
@@ -78,13 +76,21 @@ impl From<ConnectionLimits> for StrongholdConnectionLimits {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ClientAccess {
+    #[serde(default)]
     use_vault_default: bool,
+    #[serde(default)]
     use_vault_exceptions: HashMap<Vec<u8>, bool>,
+    #[serde(default)]
     write_vault_default: bool,
+    #[serde(default)]
     write_vault_exceptions: HashMap<Vec<u8>, bool>,
+    #[serde(default)]
     clone_vault_default: bool,
+    #[serde(default)]
     clone_vault_exceptions: HashMap<Vec<u8>, bool>,
+    #[serde(default)]
     read_store: bool,
+    #[serde(default)]
     write_store: bool,
 }
 
@@ -124,15 +130,17 @@ impl From<ClientAccess> for StrongholdClientAccess {
 
 #[derive(Default, Deserialize)]
 pub(crate) struct Permissions {
+    #[serde(default)]
     default: ClientAccess,
-    exceptions: HashMap<Vec<u8>, ClientAccess>,
+    #[serde(default)]
+    exceptions: HashMap<BytesDto, ClientAccess>,
 }
 
 impl From<Permissions> for StrongholdPermissions {
     fn from(p: Permissions) -> Self {
         let mut perm = StrongholdPermissions::new(p.default.into());
         for (path, permissions) in p.exceptions {
-            perm = perm.with_client_permissions(path, permissions.into());
+            perm = perm.with_client_permissions(path.into(), permissions.into());
         }
         perm
     }
@@ -144,10 +152,14 @@ pub(crate) struct NetworkConfig {
     request_timeout: Option<Duration>,
     connection_timeout: Option<Duration>,
     connections_limit: Option<ConnectionLimits>,
+    #[serde(default)]
     enable_mdns: bool,
+    #[serde(default)]
     enable_relay: bool,
     addresses: Option<AddressInfo>,
+    #[serde(default)]
     peer_permissions: HashMap<PeerId, Permissions>,
+    #[serde(default)]
     permissions_default: Permissions,
 }
 
@@ -392,15 +404,12 @@ pub(crate) async fn p2p_stop_listening(
 pub(crate) async fn p2p_add_peer_addr(
     collection: State<'_, StrongholdCollection>,
     snapshot_path: PathBuf,
-    peer: String,
+    peer: PeerId,
     address: Multiaddr,
 ) -> Result<Multiaddr> {
     let stronghold = get_stronghold(collection, snapshot_path)?;
     stronghold
-        .add_peer_addr(
-            PeerId::from_str(&peer).map_err(|_e| Error::InvalidPeer)?,
-            address,
-        )
+        .add_peer_addr(peer, address)
         .await
         .map_err(Into::into)
 }
@@ -409,31 +418,22 @@ pub(crate) async fn p2p_add_peer_addr(
 pub(crate) async fn p2p_connect(
     collection: State<'_, StrongholdCollection>,
     snapshot_path: PathBuf,
-    peer: String,
+    peer: PeerId,
 ) -> Result<()> {
     let stronghold = get_stronghold(collection, snapshot_path)?;
-    stronghold
-        .connect(PeerId::from_str(&peer).map_err(|_e| Error::InvalidPeer)?)
-        .await
-        .map_err(Into::into)
+    stronghold.connect(peer).await.map_err(Into::into)
 }
 
 #[tauri::command]
 pub(crate) async fn p2p_send(
     collection: State<'_, StrongholdCollection>,
     snapshot_path: PathBuf,
-    peer: String,
+    peer: PeerId,
     client: BytesDto,
     request: Request,
 ) -> Result<()> {
     let stronghold = get_stronghold(collection, snapshot_path)?;
-    stronghold
-        .send(
-            PeerId::from_str(&peer).map_err(|_e| Error::InvalidPeer)?,
-            client,
-            request,
-        )
-        .await?;
+    stronghold.send(peer, client, request).await?;
     Ok(())
 }
 

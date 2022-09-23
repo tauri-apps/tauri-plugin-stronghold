@@ -33,7 +33,7 @@ struct StrongholdCollection(Arc<Mutex<HashMap<PathBuf, Stronghold>>>);
 
 struct PasswordHashFunction(Box<PasswordHashFn>);
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(untagged)]
 enum BytesDto {
     Text(String),
