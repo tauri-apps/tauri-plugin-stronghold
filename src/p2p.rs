@@ -221,8 +221,34 @@ pub(crate) async fn p2p_stop(
     collection: State<'_, StrongholdCollection>,
     snapshot_path: PathBuf,
 ) -> Result<()> {
-    let stronghold = get_stronghold(collection, snapshot_path)?;
-    stronghold.clear_network().await.map_err(Into::into)
+    let (stronghold, p2p_server) = if let Some((stronghold, p2p_server)) = collection
+        .0
+        .lock()
+        .unwrap()
+        .get(&snapshot_path)
+        .map(|s| (s.inner().clone(), s.p2p_server.clone()))
+    {
+        (stronghold, p2p_server)
+    } else {
+        return Err(Error::StrongholdNotInitialized);
+    };
+    crate::stronghold::p2p_stop(p2p_server).await;
+    stronghold.clear_network().await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub(crate) fn p2p_serve(
+    collection: State<'_, StrongholdCollection>,
+    snapshot_path: PathBuf,
+) -> Result<()> {
+    let collection = collection.0.lock().unwrap();
+    if let Some(stronghold) = collection.get(&snapshot_path) {
+        stronghold.p2p_serve();
+        Ok(())
+    } else {
+        Err(Error::StrongholdNotInitialized)
+    }
 }
 
 #[tauri::command]
@@ -274,7 +300,7 @@ pub(crate) async fn p2p_connect(
         .map_err(Into::into)
 }
 
-// TODO: add serve, send
+// TODO: add send
 
 fn get_stronghold(
     collection: State<'_, StrongholdCollection>,

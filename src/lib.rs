@@ -426,6 +426,7 @@ impl Builder {
         let p2p_handler: Box<dyn Fn(Invoke<R>) + Send + Sync> = Box::new(tauri::generate_handler![
             p2p::p2p_spawn,
             p2p::p2p_stop,
+            p2p::p2p_serve,
             p2p::p2p_start_listening,
             p2p::p2p_stop_listening,
             p2p::p2p_add_peer_addr,
