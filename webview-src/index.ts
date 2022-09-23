@@ -1,6 +1,21 @@
 import { invoke } from '@tauri-apps/api/tauri'
 
-export type VaultPath = string | number[]
+type BytesDto = string | number[]
+export type ClientPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type VaultPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type RecordPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type StoreKey = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+
+function toBytesDto(v: ClientPath | VaultPath | RecordPath | StoreKey): string | number[] {
+  if (typeof v === 'string') {
+    return v
+  }
+  return Array.from(
+    v instanceof ArrayBuffer
+      ? new Uint8Array(v)
+      : v
+  )
+}
 
 export interface ConnectionLimits {
   maxPendingIncoming?: number
@@ -62,25 +77,19 @@ export class Location {
     this.payload = payload
   }
 
-  static generic(vaultName: string, recordName: string) {
+  static generic(vault: VaultPath, record: RecordPath) {
     return new Location('Generic', {
-      vault: vaultName,
-      record: recordName
+      vault: toBytesDto(vault),
+      record: toBytesDto(record)
     })
   }
 
-  static counter(vaultName: string, counter: number) {
+  static counter(vault: VaultPath, counter: number) {
     return new Location('Counter', {
-      vault: vaultName,
+      vault: toBytesDto(vault),
       counter
     })
   }
-}
-
-export function setPasswordClearInterval(interval: Duration) {
-  return invoke('plugin:stronghold|set_password_clear_interval', {
-    interval
-  })
 }
 
 class ProcedureExecutor {
@@ -90,8 +99,8 @@ class ProcedureExecutor {
     this.procedureArgs = procedureArgs
   }
 
-  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number): Promise<void> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'SLIP10Generate',
@@ -100,11 +109,11 @@ class ProcedureExecutor {
           sizeBytes,
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<string> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'SLIP10Derive',
@@ -117,11 +126,11 @@ class ProcedureExecutor {
           output: outputLocation,
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string): Promise<void> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'BIP39Recover',
@@ -131,11 +140,11 @@ class ProcedureExecutor {
           output: outputLocation,
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  generateBIP39(outputLocation: Location, passphrase?: string): Promise<void> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  generateBIP39(outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'BIP39Generate',
@@ -144,11 +153,11 @@ class ProcedureExecutor {
           passphrase,
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  getEd25519PublicKey(privateKeyLocation: Location): Promise<string> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  getEd25519PublicKey(privateKeyLocation: Location): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'PublicKey',
@@ -157,11 +166,11 @@ class ProcedureExecutor {
           privateKey: privateKeyLocation
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  signEd25519(privateKeyLocation: Location, msg: string): Promise<string> {
-    return invoke(`plugin:stronghold|execute_procedure`, {
+  signEd25519(privateKeyLocation: Location, msg: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'Ed25519Sign',
@@ -170,21 +179,21 @@ class ProcedureExecutor {
           msg
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 }
 
 export class Client {
   path: string
-  name: string
+  name: BytesDto
 
-  constructor(path: string, name: string) {
+  constructor(path: string, name: ClientPath) {
     this.path = path
-    this.name = name
+    this.name = toBytesDto(name)
   }
 
-  getVault(name: string): Vault {
-    return new Vault(this.path, this.name, name)
+  getVault(name: VaultPath): Vault {
+    return new Vault(this.path, this.name, toBytesDto(name))
   }
 
   getStore(): Store {
@@ -194,62 +203,62 @@ export class Client {
 
 export class Store {
   path: string
-  client: string
+  client: BytesDto
 
-  constructor(path: string, client: string) {
+  constructor(path: string, client: BytesDto) {
     this.path = path
     this.client = client
   }
 
-  get(key: string): Promise<number[]> {
-    return invoke('plugin:stronghold|get_store_record', {
+  get(key: StoreKey): Promise<Uint8Array> {
+    return invoke<number[]>('plugin:stronghold|get_store_record', {
       snapshotPath: this.path,
       client: this.client,
-      key
-    })
+      key: toBytesDto(key)
+    }).then(v => Uint8Array.from(v))
   }
 
-  insert(key: string, value: number[], lifetime?: Duration): Promise<void> {
+  insert(key: StoreKey, value: number[], lifetime?: Duration): Promise<void> {
     return invoke('plugin:stronghold|save_store_record', {
       snapshotPath: this.path,
       client: this.client,
-      key,
+      key: toBytesDto(key),
       value,
       lifetime
     })
   }
 
-  remove(key: string): Promise<number[] | null> {
-    return invoke('plugin:stronghold|remove_store_record', {
+  remove(key: StoreKey): Promise<Uint8Array | null> {
+    return invoke<number[] | null>('plugin:stronghold|remove_store_record', {
       snapshotPath: this.path,
       client: this.client,
-      key
-    })
+      key: toBytesDto(key)
+    }).then(v => v ? Uint8Array.from(v) : null)
   }
 }
 
 export class Vault extends ProcedureExecutor {
   path: string
-  client: string
-  name: string
+  client: BytesDto
+  name: BytesDto
 
-  constructor(path: string, client: string, name: string) {
+  constructor(path: string, client: ClientPath, name: VaultPath) {
     super({
       snapshotPath: path,
       client,
       vault: name,
     })
     this.path = path
-    this.client = client
-    this.name = name
+    this.client = toBytesDto(client)
+    this.name = toBytesDto(name)
   }
 
-  insert(key: string, secret: number[]): Promise<void> {
+  insert(recordPath: RecordPath, secret: number[]): Promise<void> {
     return invoke('plugin:stronghold|save_secret', {
       snapshotPath: this.path,
       client: this.client,
       vault: this.name,
-      recordPath: key,
+      recordPath: toBytesDto(recordPath),
       secret,
     })
   }
@@ -284,16 +293,16 @@ export class Communication {
     })
   }
 
-  private send<T>(peer: string, client: string, request: any): Promise<T> {
+  private send<T>(peer: string, client: ClientPath, request: any): Promise<T> {
     return invoke('plugin:stronghold|p2p_send', {
       snapshotPath: this.path,
       peer,
-      client,
+      client: toBytesDto(client),
       request,
     })
   }
 
-  getSnapshotHierarchy(peer: string, client: string): Promise<void> {
+  getSnapshotHierarchy(peer: string, client: ClientPath): Promise<void> {
     return this.send(peer, client, {
       type: 'SnapshotRequest',
       payload: {
@@ -304,7 +313,7 @@ export class Communication {
     })
   }
 
-  checkVault(peer: string, client: string, vault: string): Promise<boolean> {
+  checkVault(peer: string, client: ClientPath, vault: VaultPath): Promise<boolean> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
@@ -318,7 +327,7 @@ export class Communication {
     })
   }
 
-  checkRecord(peer: string, client: string, location: Location): Promise<boolean> {
+  checkRecord(peer: string, client: ClientPath, location: Location): Promise<boolean> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
@@ -332,7 +341,7 @@ export class Communication {
     })
   }
 
-  writeToVault(peer: string, client: string, location: Location, payload: number[]): Promise<void> {
+  writeToVault(peer: string, client: ClientPath, location: Location, payload: number[]): Promise<void> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
@@ -347,7 +356,7 @@ export class Communication {
     })
   }
 
-  revokeData(peer: string, client: string, location: Location): Promise<void> {
+  revokeData(peer: string, client: ClientPath, location: Location): Promise<void> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
@@ -361,7 +370,7 @@ export class Communication {
     })
   }
 
-  deleteData(peer: string, client: string, location: Location): Promise<void> {
+  deleteData(peer: string, client: ClientPath, location: Location): Promise<void> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
@@ -375,28 +384,28 @@ export class Communication {
     })
   }
 
-  readFromStore(peer: string, client: string, key: string): Promise<number[]> {
+  readFromStore(peer: string, client: ClientPath, key: StoreKey): Promise<number[]> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
           type: 'ReadFromStore',
           payload: {
-            key,
+            key: toBytesDto(key),
           }
         }
       }
     })
   }
 
-  writeToStore(peer: string, client: string, key: string, payload: number[], lifetime?: Duration): Promise<void> {
+  writeToStore(peer: string, client: ClientPath, key: StoreKey, payload: number[], lifetime?: Duration): Promise<void> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
           type: 'WriteToStore',
           payload: {
-            key,
+            key: toBytesDto(key),
             payload,
             lifetime
           }
@@ -405,22 +414,22 @@ export class Communication {
     })
   }
 
-  deleteFromStore(peer: string, client: string, key: string): Promise<void> {
+  deleteFromStore(peer: string, client: ClientPath, key: StoreKey): Promise<void> {
     return this.send(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
           type: 'DeleteFromStore',
           payload: {
-            key,
+            key: toBytesDto(key),
           }
         }
       }
     })
   }
 
-  generateSLIP10Seed(peer: string, client: string, outputLocation: Location, sizeBytes?: number): Promise<void> {
-    return this.send(peer, client, {
+  generateSLIP10Seed(peer: string, client: ClientPath, outputLocation: Location, sizeBytes?: number): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -436,11 +445,11 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  deriveSLIP10(peer: string, client: string, chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<string> {
-    return this.send(peer, client, {
+  deriveSLIP10(peer: string, client: ClientPath, chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -460,11 +469,11 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  recoverBIP39(peer: string, client: string, mnemonic: string, outputLocation: Location, passphrase?: string): Promise<void> {
-    return this.send(peer, client, {
+  recoverBIP39(peer: string, client: ClientPath, mnemonic: string, outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -481,11 +490,11 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  generateBIP39(peer: string, client: string, outputLocation: Location, passphrase?: string): Promise<void> {
-    return this.send(peer, client, {
+  generateBIP39(peer: string, client: ClientPath, outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -501,11 +510,11 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  getEd25519PublicKey(peer: string, client: string, privateKeyLocation: Location): Promise<string> {
-    return this.send(peer, client, {
+  getEd25519PublicKey(peer: string, client: ClientPath, privateKeyLocation: Location): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -521,11 +530,11 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  signEd25519(peer: string, client: string, privateKeyLocation: Location, msg: string): Promise<string> {
-    return this.send(peer, client, {
+  signEd25519(peer: string, client: ClientPath, privateKeyLocation: Location, msg: string): Promise<Uint8Array> {
+    return this.send<number[]>(peer, client, {
       type: 'ClientRequest',
       payload: {
         request: {
@@ -541,7 +550,7 @@ export class Communication {
           }
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
   stop(): Promise<void> {
@@ -580,7 +589,7 @@ export class Stronghold {
     this.reload(password)
   }
 
-  reload(password: string): Promise<void> {
+  private reload(password: string): Promise<void> {
     return invoke('plugin:stronghold|initialize', {
       snapshotPath: this.path,
       password
@@ -593,17 +602,17 @@ export class Stronghold {
     })
   }
 
-  loadClient(client: string): Promise<Client> {
+  loadClient(client: ClientPath): Promise<Client> {
     return invoke('plugin:stronghold|load_client', {
       snapshotPath: this.path,
-      client
+      client: toBytesDto(client)
     }).then(() => new Client(this.path, client))
   }
 
-  createClient(client: string): Promise<Client> {
+  createClient(client: ClientPath): Promise<Client> {
     return invoke('plugin:stronghold|create_client', {
       snapshotPath: this.path,
-      client
+      client: toBytesDto(client)
     }).then(() => new Client(this.path, client))
   }
 
@@ -613,10 +622,10 @@ export class Stronghold {
     })
   }
 
-  spawnCommunication(client: string, config?: NetworkConfig, keypair?: Location): Promise<Communication> {
+  spawnCommunication(client: ClientPath, config?: NetworkConfig, keypair?: Location): Promise<Communication> {
     return invoke('plugin:stronghold|p2p_spawn', {
       snapshotPath: this.path,
-      client,
+      client: toBytesDto(client),
       config,
       keypair
     }).then(() => new Communication(this.path))

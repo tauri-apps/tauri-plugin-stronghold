@@ -61,8 +61,8 @@ impl From<BytesDto> for Vec<u8> {
 #[derive(Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum LocationDto {
-    Generic { vault: String, record: String },
-    Counter { vault: String, counter: usize },
+    Generic { vault: BytesDto, record: BytesDto },
+    Counter { vault: BytesDto, counter: usize },
 }
 
 impl From<LocationDto> for Location {

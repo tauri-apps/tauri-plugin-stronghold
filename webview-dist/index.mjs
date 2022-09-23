@@ -1,27 +1,30 @@
 import { invoke } from '@tauri-apps/api/tauri';
 
+function toBytesDto(v) {
+    if (typeof v === 'string') {
+        return v;
+    }
+    return Array.from(v instanceof ArrayBuffer
+        ? new Uint8Array(v)
+        : v);
+}
 class Location {
     constructor(type, payload) {
         this.type = type;
         this.payload = payload;
     }
-    static generic(vaultName, recordName) {
+    static generic(vault, record) {
         return new Location('Generic', {
-            vault: vaultName,
-            record: recordName
+            vault: toBytesDto(vault),
+            record: toBytesDto(record)
         });
     }
-    static counter(vaultName, counter) {
+    static counter(vault, counter) {
         return new Location('Counter', {
-            vault: vaultName,
+            vault: toBytesDto(vault),
             counter
         });
     }
-}
-function setPasswordClearInterval(interval) {
-    return invoke('plugin:stronghold|set_password_clear_interval', {
-        interval
-    });
 }
 class ProcedureExecutor {
     constructor(procedureArgs) {
@@ -37,7 +40,7 @@ class ProcedureExecutor {
                     sizeBytes,
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     deriveSLIP10(chain, source, sourceLocation, outputLocation) {
         return invoke(`plugin:stronghold|execute_procedure`, {
@@ -53,7 +56,7 @@ class ProcedureExecutor {
                     output: outputLocation,
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     recoverBIP39(mnemonic, outputLocation, passphrase) {
         return invoke(`plugin:stronghold|execute_procedure`, {
@@ -66,7 +69,7 @@ class ProcedureExecutor {
                     output: outputLocation,
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     generateBIP39(outputLocation, passphrase) {
         return invoke(`plugin:stronghold|execute_procedure`, {
@@ -78,7 +81,7 @@ class ProcedureExecutor {
                     passphrase,
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     getEd25519PublicKey(privateKeyLocation) {
         return invoke(`plugin:stronghold|execute_procedure`, {
@@ -90,7 +93,7 @@ class ProcedureExecutor {
                     privateKey: privateKeyLocation
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     signEd25519(privateKeyLocation, msg) {
         return invoke(`plugin:stronghold|execute_procedure`, {
@@ -102,16 +105,16 @@ class ProcedureExecutor {
                     msg
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
 }
 class Client {
     constructor(path, name) {
         this.path = path;
-        this.name = name;
+        this.name = toBytesDto(name);
     }
     getVault(name) {
-        return new Vault(this.path, this.name, name);
+        return new Vault(this.path, this.name, toBytesDto(name));
     }
     getStore() {
         return new Store(this.path, this.name);
@@ -126,14 +129,14 @@ class Store {
         return invoke('plugin:stronghold|get_store_record', {
             snapshotPath: this.path,
             client: this.client,
-            key
-        });
+            key: toBytesDto(key)
+        }).then(v => Uint8Array.from(v));
     }
     insert(key, value, lifetime) {
         return invoke('plugin:stronghold|save_store_record', {
             snapshotPath: this.path,
             client: this.client,
-            key,
+            key: toBytesDto(key),
             value,
             lifetime
         });
@@ -142,8 +145,8 @@ class Store {
         return invoke('plugin:stronghold|remove_store_record', {
             snapshotPath: this.path,
             client: this.client,
-            key
-        });
+            key: toBytesDto(key)
+        }).then(v => v ? Uint8Array.from(v) : null);
     }
 }
 class Vault extends ProcedureExecutor {
@@ -154,15 +157,15 @@ class Vault extends ProcedureExecutor {
             vault: name,
         });
         this.path = path;
-        this.client = client;
-        this.name = name;
+        this.client = toBytesDto(client);
+        this.name = toBytesDto(name);
     }
-    insert(key, secret) {
+    insert(recordPath, secret) {
         return invoke('plugin:stronghold|save_secret', {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
-            recordPath: key,
+            recordPath: toBytesDto(recordPath),
             secret,
         });
     }
@@ -194,7 +197,7 @@ class Communication {
         return invoke('plugin:stronghold|p2p_send', {
             snapshotPath: this.path,
             peer,
-            client,
+            client: toBytesDto(client),
             request,
         });
     }
@@ -281,7 +284,7 @@ class Communication {
                 request: {
                     type: 'ReadFromStore',
                     payload: {
-                        key,
+                        key: toBytesDto(key),
                     }
                 }
             }
@@ -294,7 +297,7 @@ class Communication {
                 request: {
                     type: 'WriteToStore',
                     payload: {
-                        key,
+                        key: toBytesDto(key),
                         payload,
                         lifetime
                     }
@@ -309,7 +312,7 @@ class Communication {
                 request: {
                     type: 'DeleteFromStore',
                     payload: {
-                        key,
+                        key: toBytesDto(key),
                     }
                 }
             }
@@ -332,7 +335,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     deriveSLIP10(peer, client, chain, source, sourceLocation, outputLocation) {
         return this.send(peer, client, {
@@ -355,7 +358,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     recoverBIP39(peer, client, mnemonic, outputLocation, passphrase) {
         return this.send(peer, client, {
@@ -375,7 +378,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     generateBIP39(peer, client, outputLocation, passphrase) {
         return this.send(peer, client, {
@@ -394,7 +397,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     getEd25519PublicKey(peer, client, privateKeyLocation) {
         return this.send(peer, client, {
@@ -413,7 +416,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     signEd25519(peer, client, privateKeyLocation, msg) {
         return this.send(peer, client, {
@@ -432,7 +435,7 @@ class Communication {
                     }
                 }
             }
-        });
+        }).then(n => Uint8Array.from(n));
     }
     stop() {
         return invoke('plugin:stronghold|p2p_stop', {
@@ -477,13 +480,13 @@ class Stronghold {
     loadClient(client) {
         return invoke('plugin:stronghold|load_client', {
             snapshotPath: this.path,
-            client
+            client: toBytesDto(client)
         }).then(() => new Client(this.path, client));
     }
     createClient(client) {
         return invoke('plugin:stronghold|create_client', {
             snapshotPath: this.path,
-            client
+            client: toBytesDto(client)
         }).then(() => new Client(this.path, client));
     }
     save() {
@@ -494,11 +497,11 @@ class Stronghold {
     spawnCommunication(client, config, keypair) {
         return invoke('plugin:stronghold|p2p_spawn', {
             snapshotPath: this.path,
-            client,
+            client: toBytesDto(client),
             config,
             keypair
         }).then(() => new Communication(this.path));
     }
 }
 
-export { Client, Communication, Location, Store, Stronghold, Vault, setPasswordClearInterval };
+export { Client, Communication, Location, Store, Stronghold, Vault };
