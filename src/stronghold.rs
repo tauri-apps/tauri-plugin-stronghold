@@ -5,16 +5,6 @@ use serde::{Serialize, Serializer};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[cfg(feature = "p2p")]
-type P2pServer = std::sync::Arc<
-    std::sync::Mutex<
-        Option<(
-            tauri::async_runtime::JoinHandle<std::result::Result<(), iota_stronghold::ClientError>>,
-            futures_channel::mpsc::UnboundedSender<()>,
-        )>,
-    >,
->;
-
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("stronghold not initialized")]
@@ -40,8 +30,6 @@ pub struct Stronghold {
     inner: iota_stronghold::Stronghold,
     path: SnapshotPath,
     keyprovider: KeyProvider,
-    #[cfg(feature = "p2p")]
-    pub(crate) p2p_server: P2pServer,
 }
 
 impl Stronghold {
@@ -56,8 +44,6 @@ impl Stronghold {
             inner: stronghold,
             path,
             keyprovider,
-            #[cfg(feature = "p2p")]
-            p2p_server: Default::default(),
         })
     }
 
@@ -66,35 +52,8 @@ impl Stronghold {
         Ok(())
     }
 
-    #[cfg(feature = "p2p")]
-    pub(crate) fn p2p_serve(&self) {
-        let (sender_terminate_signal, receiver_terminate_signal) =
-            futures_channel::mpsc::unbounded();
-
-        let inner = self.inner.clone();
-        let handle =
-            tauri::async_runtime::spawn(
-                async move { inner.serve(receiver_terminate_signal).await },
-            );
-
-        self.p2p_server
-            .lock()
-            .unwrap()
-            .replace((handle, sender_terminate_signal));
-    }
-
     pub fn inner(&self) -> &iota_stronghold::Stronghold {
         &self.inner
-    }
-}
-
-#[cfg(feature = "p2p")]
-pub(crate) async fn p2p_stop(p2p_server: P2pServer) {
-    let server = p2p_server.lock().unwrap().take();
-    if let Some((handle, mut sender_terminate_signal)) = server {
-        use futures_util::SinkExt;
-        let _ = sender_terminate_signal.send(()).await;
-        let _ = handle.await;
     }
 }
 

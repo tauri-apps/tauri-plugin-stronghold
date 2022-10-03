@@ -18,12 +18,10 @@ use serde::{de::Visitor, Deserialize, Deserializer};
 use stronghold::{Error, Result, Stronghold};
 use tauri::{
     plugin::{Builder as PluginBuilder, TauriPlugin},
-    Invoke, Manager, Runtime, State,
+    Manager, Runtime, State,
 };
 use zeroize::Zeroize;
 
-#[cfg(feature = "p2p")]
-mod p2p;
 pub mod stronghold;
 
 type PasswordHashFn = dyn Fn(&str) -> Vec<u8> + Send + Sync;
@@ -409,30 +407,6 @@ impl Builder {
 
     pub fn build<R: Runtime>(self) -> TauriPlugin<R> {
         let password_hash_function = self.password_hash_function;
-        let handler: Box<dyn Fn(Invoke<R>) + Send + Sync> = Box::new(tauri::generate_handler![
-            initialize,
-            destroy,
-            save,
-            create_client,
-            load_client,
-            get_store_record,
-            save_store_record,
-            remove_store_record,
-            save_secret,
-            remove_secret,
-            execute_procedure,
-        ]);
-        #[cfg(feature = "p2p")]
-        let p2p_handler: Box<dyn Fn(Invoke<R>) + Send + Sync> = Box::new(tauri::generate_handler![
-            p2p::p2p_spawn,
-            p2p::p2p_stop,
-            p2p::p2p_serve,
-            p2p::p2p_start_listening,
-            p2p::p2p_stop_listening,
-            p2p::p2p_add_peer_addr,
-            p2p::p2p_connect,
-            p2p::p2p_send
-        ]);
 
         PluginBuilder::new("stronghold")
             .setup(move |app| {
@@ -440,16 +414,19 @@ impl Builder {
                 app.manage(PasswordHashFunction(password_hash_function));
                 Ok(())
             })
-            .invoke_handler(move |invoke| {
-                if invoke.message.command().starts_with("p2p_") {
-                    #[cfg(feature = "p2p")]
-                    p2p_handler(invoke);
-                    #[cfg(not(feature = "p2p"))]
-                    invoke.resolver.reject("p2p not accessible");
-                } else {
-                    handler(invoke)
-                }
-            })
+            .invoke_handler(tauri::generate_handler![
+                initialize,
+                destroy,
+                save,
+                create_client,
+                load_client,
+                get_store_record,
+                save_store_record,
+                remove_store_record,
+                save_secret,
+                remove_secret,
+                execute_procedure,
+            ])
             .build()
     }
 }

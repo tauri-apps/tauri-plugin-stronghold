@@ -95,32 +95,6 @@ export declare class Vault extends ProcedureExecutor {
     insert(recordPath: RecordPath, secret: number[]): Promise<void>;
     remove(location: Location): Promise<void>;
 }
-export declare class Communication {
-    path: string;
-    constructor(path: string);
-    connect(peer: string): Promise<string>;
-    serve(): Promise<void>;
-    private send;
-    getSnapshotHierarchy(peer: string, client: ClientPath): Promise<void>;
-    checkVault(peer: string, client: ClientPath, vault: VaultPath): Promise<boolean>;
-    checkRecord(peer: string, client: ClientPath, location: Location): Promise<boolean>;
-    writeToVault(peer: string, client: ClientPath, location: Location, payload: number[]): Promise<void>;
-    revokeData(peer: string, client: ClientPath, location: Location): Promise<void>;
-    deleteData(peer: string, client: ClientPath, location: Location): Promise<void>;
-    readFromStore(peer: string, client: ClientPath, key: StoreKey): Promise<number[]>;
-    writeToStore(peer: string, client: ClientPath, key: StoreKey, payload: number[], lifetime?: Duration): Promise<void>;
-    deleteFromStore(peer: string, client: ClientPath, key: StoreKey): Promise<void>;
-    generateSLIP10Seed(peer: string, client: ClientPath, outputLocation: Location, sizeBytes?: number): Promise<Uint8Array>;
-    deriveSLIP10(peer: string, client: ClientPath, chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<Uint8Array>;
-    recoverBIP39(peer: string, client: ClientPath, mnemonic: string, outputLocation: Location, passphrase?: string): Promise<Uint8Array>;
-    generateBIP39(peer: string, client: ClientPath, outputLocation: Location, passphrase?: string): Promise<Uint8Array>;
-    getEd25519PublicKey(peer: string, client: ClientPath, privateKeyLocation: Location): Promise<Uint8Array>;
-    signEd25519(peer: string, client: ClientPath, privateKeyLocation: Location, msg: string): Promise<Uint8Array>;
-    stop(): Promise<void>;
-    startListening(addr?: string): Promise<string>;
-    stopListening(): Promise<string>;
-    addPeerAddr(peerId: string, addr: string): Promise<string>;
-}
 export declare class Stronghold {
     path: string;
     constructor(path: string, password: string);
@@ -129,6 +103,5 @@ export declare class Stronghold {
     loadClient(client: ClientPath): Promise<Client>;
     createClient(client: ClientPath): Promise<Client>;
     save(): Promise<void>;
-    spawnCommunication(client: ClientPath, config?: NetworkConfig, keypair?: Location): Promise<Communication>;
 }
 export {};

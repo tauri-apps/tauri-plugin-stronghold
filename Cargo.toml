@@ -11,10 +11,6 @@ exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
 tauri = "1"
 thiserror = "1"
 iota_stronghold = { version = "0.8" }
-stronghold-p2p = { package = "stronghold-p2p", version = "0.4.2", optional = true }
-libp2p = { version = "0.43.0", optional = true, default-features = false, features = [ "noise", "yamux", "mdns", "relay", "serde" ] }
-futures-channel = { version = "0.3", optional = true }
-futures-util = { version = "0.3", optional = true }
 iota-crypto = "0.14"
 serde = "1"
 serde_json = "1"
@@ -24,6 +20,3 @@ zeroize = { version = "1", features = ["zeroize_derive"] }
 [dev-dependencies]
 rand = "0.8"
 rusty-fork = "0.3"
-
-[features]
-p2p = ["iota_stronghold/p2p", "stronghold-p2p", "libp2p", "futures-channel", "futures-util"]
