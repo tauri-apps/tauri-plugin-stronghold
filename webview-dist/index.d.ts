@@ -1,41 +1,51 @@
+declare type BytesDto = string | number[];
+export declare type ClientPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;
+export declare type VaultPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;
+export declare type RecordPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;
+export declare type StoreKey = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;
+export interface ConnectionLimits {
+    maxPendingIncoming?: number;
+    maxPendingOutgoing?: number;
+    maxEstablishedIncoming?: number;
+    maxEstablishedOutgoing?: number;
+    maxEstablishedPerPeer?: number;
+    maxEstablishedTotal?: number;
+}
+export interface PeerAddress {
+    known: string[];
+    use_relay_fallback: boolean;
+}
+export interface AddressInfo {
+    peers: Map<string, PeerAddress>;
+    relays: string[];
+}
+export interface ClientAccess {
+    useVaultDefault?: boolean;
+    useVaultExceptions?: Map<VaultPath, boolean>;
+    writeVaultDefault?: boolean;
+    writeVaultExceptions?: Map<VaultPath, boolean>;
+    cloneVaultDefault?: boolean;
+    cloneVaultExceptions?: Map<VaultPath, boolean>;
+    readStore?: boolean;
+    writeStore?: boolean;
+}
+export interface Permissions {
+    default?: ClientAccess;
+    exceptions?: Map<VaultPath, ClientAccess>;
+}
+export interface NetworkConfig {
+    requestTimeout?: Duration;
+    connectionTimeout?: Duration;
+    connectionsLimit?: ConnectionLimits;
+    enableMdns?: boolean;
+    enableRelay?: boolean;
+    addresses?: AddressInfo;
+    peerPermissions?: Map<string, Permissions>;
+    permissionsDefault?: Permissions;
+}
 export interface Duration {
     millis: number;
     nanos: number;
-}
-export interface Status {
-    snapshot: {
-        status: string;
-        data?: Duration;
-    };
-}
-export interface SwarmInfo {
-    peerId: string;
-    listeningAddresses: string[];
-}
-export declare enum RelayDirection {
-    Dialing = 0,
-    Listening = 1,
-    Both = 2
-}
-export declare enum RequestPermission {
-    CheckVault = 0,
-    CheckRecord = 1,
-    WriteToStore = 2,
-    ReadFromStore = 3,
-    DeleteFromStore = 4,
-    CreateNewVault = 5,
-    WriteToVault = 6,
-    RevokeData = 7,
-    GarbageCollect = 8,
-    ListIds = 9,
-    ReadSnapshot = 10,
-    WriteSnapshot = 11,
-    FillSnapshot = 12,
-    ClearCache = 13,
-    ControlRequest = 14
-}
-declare type Unregister = () => void;
-export declare enum StrongholdFlag {
 }
 export declare class Location {
     type: string;
@@ -45,84 +55,53 @@ export declare class Location {
     constructor(type: string, payload: {
         [key: string]: any;
     });
-    static generic(vaultName: string, recordName: string): Location;
-    static counter(vaultName: string, counter: number): Location;
+    static generic(vault: VaultPath, record: RecordPath): Location;
+    static counter(vault: VaultPath, counter: number): Location;
 }
-export declare type RecordHint = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
-export declare function setPasswordClearInterval(interval: Duration): Promise<unknown>;
 declare class ProcedureExecutor {
     procedureArgs: {
         [k: string]: any;
     };
-    command: string;
-    constructor(isRemote: boolean, procedureArgs: {
+    constructor(procedureArgs: {
         [k: string]: any;
     });
-    generateSLIP10Seed(outputLocation: Location, sizeBytes?: number, hint?: RecordHint): Promise<void>;
-    deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location, hint?: RecordHint): Promise<string>;
-    recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void>;
-    generateBIP39(outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void>;
-    getPublicKey(privateKeyLocation: Location): Promise<string>;
-    sign(privateKeyLocation: Location, msg: string): Promise<string>;
+    generateSLIP10Seed(outputLocation: Location, sizeBytes?: number): Promise<Uint8Array>;
+    deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<Uint8Array>;
+    recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string): Promise<Uint8Array>;
+    generateBIP39(outputLocation: Location, passphrase?: string): Promise<Uint8Array>;
+    getEd25519PublicKey(privateKeyLocation: Location): Promise<Uint8Array>;
+    signEd25519(privateKeyLocation: Location, msg: string): Promise<Uint8Array>;
 }
-export declare class RemoteStore {
+export declare class Client {
     path: string;
-    peerId: string;
-    constructor(path: string, peerId: string);
-    get(location: Location): Promise<string>;
-    insert(location: Location, record: string, lifetime?: Duration): Promise<void>;
-}
-export declare class RemoteVault extends ProcedureExecutor {
-    path: string;
-    peerId: string;
-    constructor(path: string, peerId: string);
+    name: BytesDto;
+    constructor(path: string, name: ClientPath);
+    getVault(name: VaultPath): Vault;
+    getStore(): Store;
 }
 export declare class Store {
     path: string;
-    name: string;
-    flags: StrongholdFlag[];
-    constructor(path: string, name: string, flags: StrongholdFlag[]);
-    private get vault();
-    get(location: Location): Promise<string>;
-    insert(location: Location, record: string, lifetime?: Duration): Promise<void>;
-    remove(location: Location): Promise<void>;
+    client: BytesDto;
+    constructor(path: string, client: BytesDto);
+    get(key: StoreKey): Promise<Uint8Array>;
+    insert(key: StoreKey, value: number[], lifetime?: Duration): Promise<void>;
+    remove(key: StoreKey): Promise<Uint8Array | null>;
 }
 export declare class Vault extends ProcedureExecutor {
     path: string;
-    name: string;
-    flags: StrongholdFlag[];
-    constructor(path: string, name: string, flags: StrongholdFlag[]);
-    private get vault();
-    insert(location: Location, record: string, recordHint?: RecordHint): Promise<void>;
-    remove(location: Location, gc?: boolean): Promise<void>;
-}
-export declare class Communication {
-    path: string;
-    constructor(path: string);
-    stop(): Promise<void>;
-    startListening(addr?: string): Promise<string>;
-    getSwarmInfo(): Promise<SwarmInfo>;
-    addPeer(peerId: string, addr?: string, relayDirection?: RelayDirection): Promise<string>;
-    changeRelayDirection(peerId: string, relayDirection: RelayDirection): Promise<string>;
-    removeRelay(peerId: string): Promise<void>;
-    allowAllRequests(peers: string[], setDefault?: boolean): Promise<void>;
-    rejectAllRequests(peers: string[], setDefault?: boolean): Promise<void>;
-    allowRequests(peers: string[], permissions: RequestPermission[], changeDefault?: boolean): Promise<void>;
-    rejectRequests(peers: string[], permissions: RequestPermission[], changeDefault?: boolean): Promise<void>;
-    removeFirewallRules(peers: string[]): Promise<void>;
-    getRemoteVault(peerId: string): RemoteVault;
-    getRemoteStore(peerId: string): RemoteStore;
+    client: BytesDto;
+    name: BytesDto;
+    constructor(path: string, client: ClientPath, name: VaultPath);
+    insert(recordPath: RecordPath, secret: number[]): Promise<void>;
+    remove(location: Location): Promise<void>;
 }
 export declare class Stronghold {
     path: string;
     constructor(path: string, password: string);
-    reload(password: string): Promise<void>;
+    private reload;
     unload(): Promise<void>;
-    getVault(name: string, flags: StrongholdFlag[]): Vault;
-    getStore(name: string, flags: StrongholdFlag[]): Store;
+    loadClient(client: ClientPath): Promise<Client>;
+    createClient(client: ClientPath): Promise<Client>;
     save(): Promise<void>;
-    getStatus(): Promise<Status>;
-    onStatusChange(cb: (status: Status) => void): Unregister;
-    spawnCommunication(): Promise<Communication>;
 }
 export {};

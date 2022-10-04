@@ -7,14 +7,18 @@ repository = ""
 edition = "2018"
 
 [dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = [ "derive" ] }
-tauri = { version = "1.0.0", features = ["api-all"] }
+serde_json = "1"
+serde = { version = "1", features = [ "derive" ] }
+tauri = { version = "1", features = ["api-all"] }
 tauri-plugin-stronghold = { path = "../../../" }
+rust-argon2 = { version = "=1.0.0" }
 
 [build-dependencies]
-tauri-build = "1.0.0"
+tauri-build = "1"
 
 [features]
 default = [ "custom-protocol" ]
 custom-protocol = [ "tauri/custom-protocol" ]
+
+[profile.dev.package."*"]
+opt-level = 3

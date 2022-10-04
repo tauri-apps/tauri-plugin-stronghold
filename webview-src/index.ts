@@ -1,74 +1,72 @@
 import { invoke } from '@tauri-apps/api/tauri'
-import { listen } from '@tauri-apps/api/event'
+
+type BytesDto = string | number[]
+export type ClientPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type VaultPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type RecordPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+export type StoreKey = string | Iterable<number> | ArrayLike<number> | ArrayBuffer
+
+function toBytesDto(v: ClientPath | VaultPath | RecordPath | StoreKey): string | number[] {
+  if (typeof v === 'string') {
+    return v
+  }
+  return Array.from(
+    v instanceof ArrayBuffer
+      ? new Uint8Array(v)
+      : v
+  )
+}
+
+export interface ConnectionLimits {
+  maxPendingIncoming?: number
+  maxPendingOutgoing?: number
+  maxEstablishedIncoming?: number
+  maxEstablishedOutgoing?: number
+  maxEstablishedPerPeer?: number
+  maxEstablishedTotal?: number
+}
+
+export interface PeerAddress {
+  known: string[] // multiaddr
+  use_relay_fallback: boolean
+}
+
+export interface AddressInfo {
+  peers: Map<string, PeerAddress>
+  relays: string[] // peers
+}
+
+export interface ClientAccess {
+  useVaultDefault?: boolean
+  useVaultExceptions?: Map<VaultPath, boolean>
+  writeVaultDefault?: boolean
+  writeVaultExceptions?: Map<VaultPath, boolean>
+  cloneVaultDefault?: boolean
+  cloneVaultExceptions?: Map<VaultPath, boolean>
+  readStore?: boolean
+  writeStore?: boolean
+}
+
+export interface Permissions {
+  default?: ClientAccess
+  exceptions?: Map<VaultPath, ClientAccess>
+}
+
+export interface NetworkConfig {
+  requestTimeout?: Duration
+  connectionTimeout?: Duration
+  connectionsLimit?: ConnectionLimits
+  enableMdns?: boolean
+  enableRelay?: boolean
+  addresses?: AddressInfo
+  peerPermissions?: Map<string, Permissions>
+  permissionsDefault?: Permissions
+}
 
 export interface Duration {
   millis: number
   nanos: number
 }
-
-export interface Status {
-  snapshot: {
-    status: string
-    data?: Duration
-  }
-}
-
-export interface SwarmInfo {
-  peerId: string
-  listeningAddresses: string[]
-}
-
-export enum RelayDirection {
-  Dialing,
-  Listening,
-  Both
-}
-
-export enum RequestPermission {
-  CheckVault,
-  CheckRecord,
-  WriteToStore,
-  ReadFromStore,
-  DeleteFromStore,
-  CreateNewVault,
-  WriteToVault,
-  RevokeData,
-  GarbageCollect,
-  ListIds,
-  ReadSnapshot,
-  WriteSnapshot,
-  FillSnapshot,
-  ClearCache,
-  ControlRequest,
-}
-
-interface StatusListener {
-  id: string
-  cb: (status: Status) => void
-}
-
-type Unregister = () => void
-
-const statusChangeListeners: { [snapshotPath: string]: StatusListener[] } = {}
-
-listen('stronghold://status-change', event => {
-  const { snapshotPath, status } = event.payload as any
-  for (const listener of (statusChangeListeners[snapshotPath] || [])) {
-    listener.cb(status)
-  }
-})
-
-function s4() {
-  return Math.floor((1 + Math.random()) * 0x10000)
-    .toString(16)
-    .substring(1)
-}
-function uid() {
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-    s4() + '-' + s4() + s4() + s4()
-}
-
-export enum StrongholdFlag { }
 
 export class Location {
   type: string
@@ -79,55 +77,43 @@ export class Location {
     this.payload = payload
   }
 
-  static generic(vaultName: string, recordName: string) {
+  static generic(vault: VaultPath, record: RecordPath) {
     return new Location('Generic', {
-      vault: vaultName,
-      record: recordName
+      vault: toBytesDto(vault),
+      record: toBytesDto(record)
     })
   }
 
-  static counter(vaultName: string, counter: number) {
+  static counter(vault: VaultPath, counter: number) {
     return new Location('Counter', {
-      vault: vaultName,
+      vault: toBytesDto(vault),
       counter
     })
   }
 }
 
-// array with length 24
-export type RecordHint = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]
-
-export function setPasswordClearInterval(interval: Duration) {
-  return invoke('plugin:stronghold|set_password_clear_interval', {
-    interval
-  })
-}
-
 class ProcedureExecutor {
   procedureArgs: { [k: string]: any }
-  command: string
 
-  constructor(isRemote: boolean, procedureArgs: { [k: string]: any }) {
+  constructor(procedureArgs: { [k: string]: any }) {
     this.procedureArgs = procedureArgs
-    this.command = isRemote ? 'execute_remote_procedure' : 'execute_procedure'
   }
 
-  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number, hint?: RecordHint): Promise<void> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  generateSLIP10Seed(outputLocation: Location, sizeBytes?: number): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'SLIP10Generate',
         payload: {
           output: outputLocation,
           sizeBytes,
-          hint
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location, hint?: RecordHint): Promise<string> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  deriveSLIP10(chain: number[], source: 'Seed' | 'Key', sourceLocation: Location, outputLocation: Location): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'SLIP10Derive',
@@ -138,14 +124,13 @@ class ProcedureExecutor {
             payload: sourceLocation
           },
           output: outputLocation,
-          hint
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  recoverBIP39(mnemonic: string, outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'BIP39Recover',
@@ -153,40 +138,39 @@ class ProcedureExecutor {
           mnemonic,
           passphrase,
           output: outputLocation,
-          hint
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  generateBIP39(outputLocation: Location, passphrase?: string, hint?: RecordHint): Promise<void> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  generateBIP39(outputLocation: Location, passphrase?: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'BIP39Generate',
         payload: {
           output: outputLocation,
           passphrase,
-          hint
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  getPublicKey(privateKeyLocation: Location): Promise<string> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  getEd25519PublicKey(privateKeyLocation: Location): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
-        type: 'Ed25519PublicKey',
+        type: 'PublicKey',
         payload: {
+          type: 'Ed25519',
           privateKey: privateKeyLocation
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 
-  sign(privateKeyLocation: Location, msg: string): Promise<string> {
-    return invoke(`plugin:stronghold|${this.command}`, {
+  signEd25519(privateKeyLocation: Location, msg: string): Promise<Uint8Array> {
+    return invoke<number[]>(`plugin:stronghold|execute_procedure`, {
       ...this.procedureArgs,
       procedure: {
         type: 'Ed25519Sign',
@@ -195,237 +179,97 @@ class ProcedureExecutor {
           msg
         }
       }
-    })
+    }).then(n => Uint8Array.from(n))
   }
 }
 
-export class RemoteStore {
+export class Client {
   path: string
-  peerId: string
+  name: BytesDto
 
-  constructor(path: string, peerId: string) {
+  constructor(path: string, name: ClientPath) {
     this.path = path
-    this.peerId = peerId
+    this.name = toBytesDto(name)
   }
 
-  get(location: Location): Promise<string> {
-    return invoke('plugin:stronghold|get_remote_store_record', {
-      snapshotPath: this.path,
-      peerId: this.peerId,
-      location
-    })
+  getVault(name: VaultPath): Vault {
+    return new Vault(this.path, this.name, toBytesDto(name))
   }
 
-  insert(location: Location, record: string, lifetime?: Duration): Promise<void> {
-    return invoke('plugin:stronghold|save_remote_store_record', {
-      snapshotPath: this.path,
-      peerId: this.peerId,
-      location,
-      record,
-      lifetime
-    })
-  }
-}
-
-export class RemoteVault extends ProcedureExecutor {
-  path: string
-  peerId: string
-
-  constructor(path: string, peerId: string) {
-    super(true, {
-      peerId
-    })
-    this.path = path
-    this.peerId = peerId
+  getStore(): Store {
+    return new Store(this.path, this.name)
   }
 }
 
 export class Store {
   path: string
-  name: string
-  flags: StrongholdFlag[]
+  client: BytesDto
 
-  constructor(path: string, name: string, flags: StrongholdFlag[]) {
+  constructor(path: string, client: BytesDto) {
     this.path = path
-    this.name = name
-    this.flags = flags
+    this.client = client
   }
 
-  private get vault() {
-    return {
-      name: this.name,
-      flags: this.flags
-    }
-  }
-
-  get(location: Location): Promise<string> {
-    return invoke('plugin:stronghold|get_store_record', {
+  get(key: StoreKey): Promise<Uint8Array> {
+    return invoke<number[]>('plugin:stronghold|get_store_record', {
       snapshotPath: this.path,
-      vault: this.vault,
-      location
-    })
+      client: this.client,
+      key: toBytesDto(key)
+    }).then(v => Uint8Array.from(v))
   }
 
-  insert(location: Location, record: string, lifetime?: Duration): Promise<void> {
+  insert(key: StoreKey, value: number[], lifetime?: Duration): Promise<void> {
     return invoke('plugin:stronghold|save_store_record', {
       snapshotPath: this.path,
-      vault: this.vault,
-      location,
-      record,
+      client: this.client,
+      key: toBytesDto(key),
+      value,
       lifetime
     })
   }
 
-  remove(location: Location): Promise<void> {
-    return invoke('plugin:stronghold|remove_store_record', {
+  remove(key: StoreKey): Promise<Uint8Array | null> {
+    return invoke<number[] | null>('plugin:stronghold|remove_store_record', {
       snapshotPath: this.path,
-      vault: this.vault,
-      location
-    })
+      client: this.client,
+      key: toBytesDto(key)
+    }).then(v => v ? Uint8Array.from(v) : null)
   }
 }
 
 export class Vault extends ProcedureExecutor {
   path: string
-  name: string
-  flags: StrongholdFlag[]
+  client: BytesDto
+  name: BytesDto
 
-  constructor(path: string, name: string, flags: StrongholdFlag[]) {
-    super(false, {
+  constructor(path: string, client: ClientPath, name: VaultPath) {
+    super({
       snapshotPath: path,
-      vault: {
-        name,
-        flags
-      }
+      client,
+      vault: name,
     })
     this.path = path
-    this.name = name
-    this.flags = flags
+    this.client = toBytesDto(client)
+    this.name = toBytesDto(name)
   }
 
-  private get vault() {
-    return {
-      name: this.name,
-      flags: this.flags
-    }
-  }
-
-  insert(location: Location, record: string, recordHint?: RecordHint): Promise<void> {
-    return invoke('plugin:stronghold|save_record', {
+  insert(recordPath: RecordPath, secret: number[]): Promise<void> {
+    return invoke('plugin:stronghold|save_secret', {
       snapshotPath: this.path,
-      vault: this.vault,
+      client: this.client,
+      vault: this.name,
+      recordPath: toBytesDto(recordPath),
+      secret,
+    })
+  }
+
+  remove(location: Location): Promise<void> {
+    return invoke('plugin:stronghold|remove_secret', {
+      snapshotPath: this.path,
+      client: this.client,
+      vault: this.name,
       location,
-      record,
-      recordHint,
-      flags: []
     })
-  }
-
-  remove(location: Location, gc = true): Promise<void> {
-    return invoke('plugin:stronghold|remove_record', {
-      snapshotPath: this.path,
-      vault: this.vault,
-      location,
-      gc
-    })
-  }
-}
-
-export class Communication {
-  path: string
-
-  constructor(path: string) {
-    this.path = path
-  }
-
-  stop(): Promise<void> {
-    return invoke('plugin:stronghold|stop_communication', {
-      snapshotPath: this.path
-    })
-  }
-
-  startListening(addr?: string): Promise<string> {
-    return invoke('plugin:stronghold|start_listening', {
-      snapshotPath: this.path,
-      addr
-    })
-  }
-
-  getSwarmInfo(): Promise<SwarmInfo> {
-    return invoke('plugin:stronghold|get_swarm_info', { snapshotPath: this.path })
-  }
-
-  addPeer(peerId: string, addr?: string, relayDirection?: RelayDirection): Promise<string> {
-    return invoke('plugin:stronghold|add_peer', {
-      snapshotPath: this.path,
-      peerId,
-      addr,
-      relayDirection: relayDirection ? { type: RelayDirection[relayDirection] } : null
-    })
-  }
-
-  changeRelayDirection(peerId: string, relayDirection: RelayDirection): Promise<string> {
-    return invoke('plugin:stronghold|change_relay_direction', {
-      snapshotPath: this.path,
-      peerId,
-      relayDirection: { type: RelayDirection[relayDirection] }
-    })
-  }
-
-  removeRelay(peerId: string): Promise<void> {
-    return invoke('plugin:stronghold|remove_relay', {
-      snapshotPath: this.path,
-      peerId
-    })
-  }
-
-  allowAllRequests(peers: string[], setDefault = false): Promise<void> {
-    return invoke('plugin:stronghold|allow_all_requests', {
-      snapshotPath: this.path,
-      peers,
-      setDefault
-    })
-  }
-
-  rejectAllRequests(peers: string[], setDefault = false): Promise<void> {
-    return invoke('plugin:stronghold|reject_all_requests', {
-      snapshotPath: this.path,
-      peers,
-      setDefault
-    })
-  }
-
-  allowRequests(peers: string[], permissions: RequestPermission[], changeDefault = false): Promise<void> {
-    return invoke('plugin:stronghold|allow_requests', {
-      snapshotPath: this.path,
-      peers,
-      requests: permissions.map(p => ({ type: RequestPermission[p] })),
-      changeDefault
-    })
-  }
-
-  rejectRequests(peers: string[], permissions: RequestPermission[], changeDefault = false): Promise<void> {
-    return invoke('plugin:stronghold|reject_requests', {
-      snapshotPath: this.path,
-      peers,
-      requests: permissions.map(p => ({ type: RequestPermission[p] })),
-      changeDefault
-    })
-  }
-
-  removeFirewallRules(peers: string[]): Promise<void> {
-    return invoke('plugin:stronghold|remove_firewall_rules', {
-      snapshotPath: this.path,
-      peers
-    })
-  }
-
-  getRemoteVault(peerId: string): RemoteVault {
-    return new RemoteVault(this.path, peerId)
-  }
-
-  getRemoteStore(peerId: string): RemoteStore {
-    return new RemoteStore(this.path, peerId)
   }
 }
 
@@ -437,8 +281,8 @@ export class Stronghold {
     this.reload(password)
   }
 
-  reload(password: string): Promise<void> {
-    return invoke('plugin:stronghold|init', {
+  private reload(password: string): Promise<void> {
+    return invoke('plugin:stronghold|initialize', {
       snapshotPath: this.path,
       password
     })
@@ -450,43 +294,23 @@ export class Stronghold {
     })
   }
 
-  getVault(name: string, flags: StrongholdFlag[]): Vault {
-    return new Vault(this.path, name, flags)
+  loadClient(client: ClientPath): Promise<Client> {
+    return invoke('plugin:stronghold|load_client', {
+      snapshotPath: this.path,
+      client: toBytesDto(client)
+    }).then(() => new Client(this.path, client))
   }
 
-  getStore(name: string, flags: StrongholdFlag[]): Store {
-    return new Store(this.path, name, flags)
+  createClient(client: ClientPath): Promise<Client> {
+    return invoke('plugin:stronghold|create_client', {
+      snapshotPath: this.path,
+      client: toBytesDto(client)
+    }).then(() => new Client(this.path, client))
   }
 
   save(): Promise<void> {
-    return invoke('plugin:stronghold|save_snapshot', {
+    return invoke('plugin:stronghold|save', {
       snapshotPath: this.path
     })
-  }
-
-  getStatus(): Promise<Status> {
-    return invoke('plugin:stronghold|get_status', {
-      snapshotPath: this.path
-    })
-  }
-
-  onStatusChange(cb: (status: Status) => void): Unregister {
-    if (statusChangeListeners[this.path] === void 0) {
-      statusChangeListeners[this.path] = []
-    }
-    const id = uid()
-    statusChangeListeners[this.path].push({
-      id,
-      cb
-    })
-    return () => {
-      statusChangeListeners[this.path] = statusChangeListeners[this.path].filter(listener => listener.id !== id)
-    }
-  }
-
-  spawnCommunication(): Promise<Communication> {
-    return invoke('plugin:stronghold|spawn_communication', {
-      snapshotPath: this.path
-    }).then(() => new Communication(this.path))
   }
 }
