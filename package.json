@@ -1,33 +1,33 @@
 {
   "name": "tauri-plugin-stronghold-api",
-  "version": "0.1.0",
+  "version": "0.0.0",
+  "description": "Store secrets and keys using the IOTA Stronghold encrypted database.",
+  "license": "MIT or APACHE-2.0",
   "authors": [
     "Tauri Programme within The Commons Conservancy"
   ],
-  "description": "API wrapper for the Tauri Plugin for Stronghold ",
-  "browser": "webview-dist/index.min.js",
-  "module": "webview-dist/index.mjs",
-  "types": "webview-dist/index.d.ts",
-  "private": "true",
-  "files": [
-    "webview-dist"
-  ],
-  "scripts": {
-    "build": "rollup -c ./webview-src/rollup.config.js",
-    "prepublishOnly": "yarn build",
-    "pretest": "yarn build"
+  "type": "module",
+  "browser": "guest-js/dist/index.min.js",
+  "module": "guest-js/dist/index.mjs",
+  "types": "guest-js/dist/index.d.ts",
+  "exports": {
+    "import": "./guest-js/dist/index.mjs",
+    "types": "./guest-js/dist/index.d.ts",
+    "browser": "./guest-js/dist/index.min.js"
   },
-  "license": "MIT",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE"
+  ],
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "13.1.3",
-    "@rollup/plugin-typescript": "8.3.1",
-    "rollup": "2.68.0",
-    "rollup-plugin-terser": "7.0.2",
-    "type-fest": "2.12.0",
-    "typescript": "4.5.5"
+    "tslib": "^2.4.1"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.0.1",
-    "tslib": "2.3.1"
+    "@tauri-apps/api": "^1.2.0"
   }
 }

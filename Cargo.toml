@@ -1,19 +1,22 @@
 [package]
 name = "tauri-plugin-stronghold"
 version = "0.1.0"
-authors = [ "Tauri Programme within The Commons Conservancy" ]
-license = "Apache-2.0 OR MIT"
-description = "A Tauri plugin for easily interfacing with IOTA Stronghold"
-edition = "2018"
-exclude = ["/examples", "/webview-dist", "/webview-src", "node_modules"]
+description = "Store secrets and keys using the IOTA Stronghold encrypted database."
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tauri = "1"
-thiserror = "1"
+serde.workspace = true
+serde_json.workspace = true
+tauri.workspace = true
+log.workspace = true
+thiserror.workspace = true
 iota_stronghold = { version = "0.8" }
 iota-crypto = "0.14"
-serde = "1"
-serde_json = "1"
 hex = "0.4"
 zeroize = { version = "1", features = ["zeroize_derive"] }
 
