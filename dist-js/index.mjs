@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/tauri';
 
+// Copyright 2019-2023 Tauri Programme within The Commons Conservancy
 function toBytesDto(v) {
     if (typeof v === "string") {
         return v;
