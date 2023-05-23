@@ -1,3 +1,8 @@
+declare global {
+    interface Window {
+        __TAURI_INVOKE__: <T>(cmd: string, args?: unknown) => Promise<T>;
+    }
+}
 type BytesDto = string | number[];
 export type ClientPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;
 export type VaultPath = string | Iterable<number> | ArrayLike<number> | ArrayBuffer;

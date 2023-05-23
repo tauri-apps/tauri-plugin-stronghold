@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/tauri';
-
 // Copyright 2019-2023 Tauri Programme within The Commons Conservancy
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 function toBytesDto(v) {
     if (typeof v === "string") {
         return v;
@@ -37,7 +37,8 @@ class ProcedureExecutor {
      * @returns
      */
     async generateSLIP10Seed(outputLocation, sizeBytes) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "SLIP10Generate",
@@ -46,7 +47,8 @@ class ProcedureExecutor {
                     sizeBytes,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
     /**
      * Derive a SLIP10 private key using a seed or key.
@@ -58,7 +60,8 @@ class ProcedureExecutor {
      * @returns
      */
     async deriveSLIP10(chain, source, sourceLocation, outputLocation) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "SLIP10Derive",
@@ -71,7 +74,8 @@ class ProcedureExecutor {
                     output: outputLocation,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
     /**
      * Store a BIP39 mnemonic.
@@ -82,7 +86,8 @@ class ProcedureExecutor {
      * @returns
      */
     async recoverBIP39(mnemonic, outputLocation, passphrase) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "BIP39Recover",
@@ -92,7 +97,8 @@ class ProcedureExecutor {
                     output: outputLocation,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
     /**
      * Generate a BIP39 seed.
@@ -102,7 +108,8 @@ class ProcedureExecutor {
      * @returns
      */
     async generateBIP39(outputLocation, passphrase) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "BIP39Generate",
@@ -111,7 +118,8 @@ class ProcedureExecutor {
                     passphrase,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
     /**
      * Gets the Ed25519 public key of a SLIP10 private key.
@@ -119,7 +127,8 @@ class ProcedureExecutor {
      * @returns A promise resolving to the public key hex string.
      */
     async getEd25519PublicKey(privateKeyLocation) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "PublicKey",
@@ -128,7 +137,8 @@ class ProcedureExecutor {
                     privateKey: privateKeyLocation,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
     /**
      * Creates a Ed25519 signature from a private key.
@@ -137,7 +147,8 @@ class ProcedureExecutor {
      * @returns A promise resolving to the signature hex string.
      */
     async signEd25519(privateKeyLocation, msg) {
-        return await invoke("plugin:stronghold|execute_procedure", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "Ed25519Sign",
@@ -146,7 +157,8 @@ class ProcedureExecutor {
                     msg,
                 },
             },
-        }).then((n) => Uint8Array.from(n));
+        })
+            .then((n) => Uint8Array.from(n));
     }
 }
 class Client {
@@ -173,14 +185,16 @@ class Store {
         this.client = client;
     }
     async get(key) {
-        return await invoke("plugin:stronghold|get_store_record", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|get_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
-        }).then((v) => Uint8Array.from(v));
+        })
+            .then((v) => Uint8Array.from(v));
     }
     async insert(key, value, lifetime) {
-        return await invoke("plugin:stronghold|save_store_record", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|save_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
@@ -189,11 +203,13 @@ class Store {
         });
     }
     async remove(key) {
-        return await invoke("plugin:stronghold|remove_store_record", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|remove_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
-        }).then((v) => (v != null ? Uint8Array.from(v) : null));
+        })
+            .then((v) => (v != null ? Uint8Array.from(v) : null));
     }
 }
 /**
@@ -220,7 +236,7 @@ class Vault extends ProcedureExecutor {
      * @returns
      */
     async insert(recordPath, secret) {
-        return await invoke("plugin:stronghold|save_secret", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|save_secret", {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
@@ -235,7 +251,7 @@ class Vault extends ProcedureExecutor {
      * @returns
      */
     async remove(location) {
-        return await invoke("plugin:stronghold|remove_secret", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|remove_secret", {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
@@ -263,7 +279,7 @@ class Stronghold {
      * @returns
      */
     async reload(password) {
-        return await invoke("plugin:stronghold|initialize", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|initialize", {
             snapshotPath: this.path,
             password,
         });
@@ -272,28 +288,32 @@ class Stronghold {
      * Remove this instance from the cache.
      */
     async unload() {
-        return await invoke("plugin:stronghold|destroy", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|destroy", {
             snapshotPath: this.path,
         });
     }
     async loadClient(client) {
-        return await invoke("plugin:stronghold|load_client", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|load_client", {
             snapshotPath: this.path,
             client: toBytesDto(client),
-        }).then(() => new Client(this.path, client));
+        })
+            .then(() => new Client(this.path, client));
     }
     async createClient(client) {
-        return await invoke("plugin:stronghold|create_client", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|create_client", {
             snapshotPath: this.path,
             client: toBytesDto(client),
-        }).then(() => new Client(this.path, client));
+        })
+            .then(() => new Client(this.path, client));
     }
     /**
      * Persists the stronghold state to the snapshot.
      * @returns
      */
     async save() {
-        return await invoke("plugin:stronghold|save", {
+        return await window.__TAURI_INVOKE__("plugin:stronghold|save", {
             snapshotPath: this.path,
         });
     }
