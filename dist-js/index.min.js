@@ -125,6 +125,8 @@ class ProcedureExecutor {
      * Gets the Ed25519 public key of a SLIP10 private key.
      * @param privateKeyLocation The location of the private key. Must be the `outputLocation` of a previous call to `deriveSLIP10`.
      * @returns A promise resolving to the public key hex string.
+     *
+     * @since 2.0.0
      */
     async getEd25519PublicKey(privateKeyLocation) {
         return await window
@@ -145,6 +147,8 @@ class ProcedureExecutor {
      * @param privateKeyLocation The location of the record where the private key is stored. Must be the `outputLocation` of a previous call to `deriveSLIP10`.
      * @param msg The message to sign.
      * @returns A promise resolving to the signature hex string.
+     *
+     * @since 2.0.0
      */
     async signEd25519(privateKeyLocation, msg) {
         return await window
