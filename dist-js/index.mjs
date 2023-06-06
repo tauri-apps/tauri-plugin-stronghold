@@ -273,20 +273,19 @@ class Stronghold {
      * @param path
      * @param password
      */
-    constructor(path, password) {
+    constructor(path) {
         this.path = path;
-        void this.reload(password);
     }
     /**
-     * Force a reload of the snapshot. The password must match.
+     * Load the snapshot if it exists (password must match), or start a fresh stronghold instance otherwise.
      * @param password
      * @returns
      */
-    async reload(password) {
+    static async load(path, password) {
         return await window.__TAURI_INVOKE__("plugin:stronghold|initialize", {
-            snapshotPath: this.path,
+            snapshotPath: path,
             password,
-        });
+        }).then(() => new Stronghold(path));
     }
     /**
      * Remove this instance from the cache.

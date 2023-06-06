@@ -178,13 +178,13 @@ export declare class Stronghold {
      * @param path
      * @param password
      */
-    constructor(path: string, password: string);
+    private constructor();
     /**
-     * Force a reload of the snapshot. The password must match.
+     * Load the snapshot if it exists (password must match), or start a fresh stronghold instance otherwise.
      * @param password
      * @returns
      */
-    private reload;
+    static load(path: string, password: string): Promise<Stronghold>;
     /**
      * Remove this instance from the cache.
      */
