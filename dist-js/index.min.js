@@ -282,10 +282,12 @@ class Stronghold {
      * @returns
      */
     static async load(path, password) {
-        return await window.__TAURI_INVOKE__("plugin:stronghold|initialize", {
+        return await window
+            .__TAURI_INVOKE__("plugin:stronghold|initialize", {
             snapshotPath: path,
             password,
-        }).then(() => new Stronghold(path));
+        })
+            .then(() => new Stronghold(path));
     }
     /**
      * Remove this instance from the cache.
