@@ -176,7 +176,14 @@ class Store {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
-        }).then((v) => Uint8Array.from(v));
+        }).then((v) => {
+            if (v) {
+                return Uint8Array.from(v);
+            }
+            else {
+                return null;
+            }
+        });
     }
     async insert(key, value, lifetime) {
         return await invoke("plugin:stronghold|save_store_record", {
