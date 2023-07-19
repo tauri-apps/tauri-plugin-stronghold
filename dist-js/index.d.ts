@@ -135,7 +135,7 @@ export declare class Store {
     path: string;
     client: BytesDto;
     constructor(path: string, client: BytesDto);
-    get(key: StoreKey): Promise<Uint8Array>;
+    get(key: StoreKey): Promise<Uint8Array | null>;
     insert(key: StoreKey, value: number[], lifetime?: Duration): Promise<void>;
     remove(key: StoreKey): Promise<Uint8Array | null>;
 }

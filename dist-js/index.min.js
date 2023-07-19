@@ -195,7 +195,7 @@ class Store {
             client: this.client,
             key: toBytesDto(key),
         })
-            .then((v) => Uint8Array.from(v));
+            .then((v) => (v != null ? Uint8Array.from(v) : null));
     }
     async insert(key, value, lifetime) {
         return await window.__TAURI_INVOKE__("plugin:stronghold|save_store_record", {
@@ -259,7 +259,7 @@ class Vault extends ProcedureExecutor {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
-            location,
+            recordPath: location.payload.record,
         });
     }
 }
