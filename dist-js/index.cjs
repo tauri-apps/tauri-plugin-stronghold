@@ -1,6 +1,6 @@
 'use strict';
 
-var primitives = require('@tauri-apps/api/primitives');
+var core = require('@tauri-apps/api/core');
 
 // Copyright 2019-2023 Tauri Programme within The Commons Conservancy
 // SPDX-License-Identifier: Apache-2.0
@@ -41,7 +41,7 @@ class ProcedureExecutor {
      * @returns
      */
     async generateSLIP10Seed(outputLocation, sizeBytes) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "SLIP10Generate",
@@ -62,7 +62,7 @@ class ProcedureExecutor {
      * @returns
      */
     async deriveSLIP10(chain, source, sourceLocation, outputLocation) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "SLIP10Derive",
@@ -86,7 +86,7 @@ class ProcedureExecutor {
      * @returns
      */
     async recoverBIP39(mnemonic, outputLocation, passphrase) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "BIP39Recover",
@@ -106,7 +106,7 @@ class ProcedureExecutor {
      * @returns
      */
     async generateBIP39(outputLocation, passphrase) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "BIP39Generate",
@@ -125,7 +125,7 @@ class ProcedureExecutor {
      * @since 2.0.0
      */
     async getEd25519PublicKey(privateKeyLocation) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "PublicKey",
@@ -145,7 +145,7 @@ class ProcedureExecutor {
      * @since 2.0.0
      */
     async signEd25519(privateKeyLocation, msg) {
-        return await primitives.invoke("plugin:stronghold|execute_procedure", {
+        return await core.invoke("plugin:stronghold|execute_procedure", {
             ...this.procedureArgs,
             procedure: {
                 type: "Ed25519Sign",
@@ -181,14 +181,14 @@ class Store {
         this.client = client;
     }
     async get(key) {
-        return await primitives.invoke("plugin:stronghold|get_store_record", {
+        return await core.invoke("plugin:stronghold|get_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
         }).then((v) => (v != null ? Uint8Array.from(v) : null));
     }
     async insert(key, value, lifetime) {
-        return await primitives.invoke("plugin:stronghold|save_store_record", {
+        return await core.invoke("plugin:stronghold|save_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
@@ -197,7 +197,7 @@ class Store {
         });
     }
     async remove(key) {
-        return await primitives.invoke("plugin:stronghold|remove_store_record", {
+        return await core.invoke("plugin:stronghold|remove_store_record", {
             snapshotPath: this.path,
             client: this.client,
             key: toBytesDto(key),
@@ -228,7 +228,7 @@ class Vault extends ProcedureExecutor {
      * @returns
      */
     async insert(recordPath, secret) {
-        return await primitives.invoke("plugin:stronghold|save_secret", {
+        return await core.invoke("plugin:stronghold|save_secret", {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
@@ -243,7 +243,7 @@ class Vault extends ProcedureExecutor {
      * @returns
      */
     async remove(location) {
-        return await primitives.invoke("plugin:stronghold|remove_secret", {
+        return await core.invoke("plugin:stronghold|remove_secret", {
             snapshotPath: this.path,
             client: this.client,
             vault: this.name,
@@ -270,7 +270,7 @@ class Stronghold {
      * @returns
      */
     static async load(path, password) {
-        return await primitives.invoke("plugin:stronghold|initialize", {
+        return await core.invoke("plugin:stronghold|initialize", {
             snapshotPath: path,
             password,
         }).then(() => new Stronghold(path));
@@ -279,18 +279,18 @@ class Stronghold {
      * Remove this instance from the cache.
      */
     async unload() {
-        return await primitives.invoke("plugin:stronghold|destroy", {
+        return await core.invoke("plugin:stronghold|destroy", {
             snapshotPath: this.path,
         });
     }
     async loadClient(client) {
-        return await primitives.invoke("plugin:stronghold|load_client", {
+        return await core.invoke("plugin:stronghold|load_client", {
             snapshotPath: this.path,
             client: toBytesDto(client),
         }).then(() => new Client(this.path, client));
     }
     async createClient(client) {
-        return await primitives.invoke("plugin:stronghold|create_client", {
+        return await core.invoke("plugin:stronghold|create_client", {
             snapshotPath: this.path,
             client: toBytesDto(client),
         }).then(() => new Client(this.path, client));
@@ -300,7 +300,7 @@ class Stronghold {
      * @returns
      */
     async save() {
-        return await primitives.invoke("plugin:stronghold|save", {
+        return await core.invoke("plugin:stronghold|save", {
             snapshotPath: this.path,
         });
     }
