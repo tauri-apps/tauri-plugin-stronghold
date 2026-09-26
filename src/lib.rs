@@ -271,10 +271,11 @@ async fn destroy(
 ) -> Result<()> {
     let mut collection = collection.0.lock().unwrap();
     if let Some(stronghold) = collection.remove(&snapshot_path)
-        && let Err(e) = stronghold.save() {
-            collection.insert(snapshot_path, stronghold);
-            return Err(e);
-        }
+        && let Err(e) = stronghold.save()
+    {
+        collection.insert(snapshot_path, stronghold);
+        return Err(e);
+    }
     Ok(())
 }
 
